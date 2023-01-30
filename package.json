@@ -9,6 +9,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "node-filelist": "^1.0.0",
     "yaml": "^2.2.1"
   }
 }
