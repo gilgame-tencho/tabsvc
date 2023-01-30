@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "child_process": "^1.0.2",
+    "commander": "^10.0.0",
     "node-filelist": "^1.0.0",
     "yaml": "^2.2.1"
   }
