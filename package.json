@@ -1,0 +1,14 @@
+{
+  "name": "tableau_dev_tool",
+  "version": "0.0.1",
+  "description": "Tableau Dev Tool\r Tableau Devlopment tool.",
+  "main": "tabsvc.js",
+  "scripts": {
+    "test": "node tabsvc.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "yaml": "^2.2.1"
+  }
+}
