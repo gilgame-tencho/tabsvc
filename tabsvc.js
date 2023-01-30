@@ -70,9 +70,7 @@ function main_decompose(){
 
 function main_status(){
     console.log(SVC);
-    exec('cd ' + __dirname, (err, stdout, stderr) => {
-        if (err) { throw err }
-    });
+    exec('cd ' + __dirname);
     exec('bash git_status.sh', (err, stdout, stderr) => {
         if (err) { throw err }
         console.log(`${stdout}`);
@@ -81,21 +79,11 @@ function main_status(){
 
 function main_commit(){
     console.log(SVC);
-    exec('cd ' + __dirname, (err, stdout, stderr) => {
-        if (err) { throw err }
-    });
-    // exec('git status', (err, stdout, stderr) => {
-    //     if (err) { throw err }
-    //     console.log(`stdout: ${stdout}`);
-    // });
+    exec('cd ' + __dirname);
     exec('bash git_commit.sh', (err, stdout, stderr) => {
-        if (err) { throw err }
+        if (err) { console.log(stderr); throw err }
         console.log(`${stdout}`);
     });
-    // exec("git commit -m 'auto commit'", (err, stdout, stderr) => {
-    //     if (err) { throw err }
-    //     console.log(`stdout: ${stdout}`);
-    // });
 }
 
 function main_deploy(){

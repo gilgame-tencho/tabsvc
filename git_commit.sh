@@ -1,5 +1,6 @@
 cd svc
-git status
+#git status
 git add .
 git commit -m 'auto commit'
-git status
+#git status
+echo 'end svc.'
