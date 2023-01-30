@@ -38,12 +38,16 @@ function path_parse(path){
 }
 
 function main_init(){
+    console.log('init function is comming soon!!');
+}
+
+function main_decompose(){
     fl.read([WS], option, function(rs){
         for(var i=0; i<rs.length; i++){
             var file = rs[i];
             // console.log(file);
             var item = path_parse(file.path);
-            console.log(item);
+            // console.log(item);
     
             var wdir = svc_name;
             for(var j=0; j<item.ws_order.length; j++){
@@ -64,12 +68,34 @@ function main_init(){
     });
 }
 
-function main_decompose(){
-    console.log('comming soon. decompose!!');
+function main_status(){
+    console.log(SVC);
+    exec('cd ' + __dirname, (err, stdout, stderr) => {
+        if (err) { throw err }
+    });
+    exec('bash git_status.sh', (err, stdout, stderr) => {
+        if (err) { throw err }
+        console.log(`${stdout}`);
+    });
 }
 
 function main_commit(){
-    console.log('comming soon. commit!!');
+    console.log(SVC);
+    exec('cd ' + __dirname, (err, stdout, stderr) => {
+        if (err) { throw err }
+    });
+    // exec('git status', (err, stdout, stderr) => {
+    //     if (err) { throw err }
+    //     console.log(`stdout: ${stdout}`);
+    // });
+    exec('bash git_commit.sh', (err, stdout, stderr) => {
+        if (err) { throw err }
+        console.log(`${stdout}`);
+    });
+    // exec("git commit -m 'auto commit'", (err, stdout, stderr) => {
+    //     if (err) { throw err }
+    //     console.log(`stdout: ${stdout}`);
+    // });
 }
 
 function main_deploy(){
@@ -101,6 +127,13 @@ program.command('commit')
     main_commit();
 });
 
+program.command('status')
+  .description('git status.')
+  .alias('s')
+  .action((str, options)=> {
+    main_status();
+});
+
 program.command('deploy')
   .description('samthing enviroment prep deployment. at deploy.conf')
   .argument('[env]', 'deploy enviroment.')
@@ -116,12 +149,6 @@ program.command('dev')
 });
 
 program.parse();
-
-//   .command("init", "git repo init.")
-//   .command("decompose", "ws prep files to svc file decompose.")
-//   .command("commit", "git commit.")
-//   .command("deploy [env]", "samthing enviroment prep deployment. at deploy.conf", (value) => { return (value || []).split(","); }, [])
-
 
 if (process.argv.length < 3) {
   program.help();

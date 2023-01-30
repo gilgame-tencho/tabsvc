@@ -1,0 +1,2 @@
+cd svc
+git status
