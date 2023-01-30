@@ -22,7 +22,24 @@ compile configuration file is deploy.conf
 
 example:
   $ cd .
-  $ tabsvc save
-  $ tabsvc compile
+  $ tabsvc commit
+  $ tabsvc deploy
 
 
+---
+Start up.
+---
+
+$ tabsvc init
+-- git repo init
+   only initial fhease.
+
+$ tabsvc decompose
+  tabsvc d
+-- ws prep files to svc file decompose.
+
+$ tabsvc commit
+-- git commit
+
+$ tabsvc deploy
+--  samthing enviroment prep deployment. at deploy.conf.
