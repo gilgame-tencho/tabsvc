@@ -1,6 +1,5 @@
 
 node_modules
 
-ws/git/*
 ws/*
 svc/*
