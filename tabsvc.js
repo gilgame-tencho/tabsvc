@@ -71,7 +71,7 @@ function main_decompose(){
 function main_status(){
     console.log(SVC);
     exec('cd ' + __dirname);
-    exec('bash git_status.sh', (err, stdout, stderr) => {
+    exec('bash bin/git_status.sh', (err, stdout, stderr) => {
         if (err) { throw err }
         console.log(`${stdout}`);
     });
@@ -80,7 +80,7 @@ function main_status(){
 function main_commit(){
     console.log(SVC);
     exec('cd ' + __dirname);
-    exec('bash git_commit.sh', (err, stdout, stderr) => {
+    exec('bash bin/git_commit.sh', (err, stdout, stderr) => {
         if (err) { console.log(stderr); throw err }
         console.log(`${stdout}`);
     });
