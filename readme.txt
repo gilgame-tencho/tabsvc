@@ -27,6 +27,16 @@ example:
 
 
 ---
+Install and Setup.
+---
+* nodejs install
+* git for windows install ( use git bash. )
+
+$ git clone xxxxx
+$ npm i
+
+
+---
 Start up.
 ---
 
