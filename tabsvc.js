@@ -9,10 +9,41 @@ const ws_name = 'ws';
 const svc_name = 'svc';
 // tmp tableau_dev_tool/.
 const option = {"ext": "tfl"};
+const target_name = "target_param.json";
 
 const WS = path.join(__dirname, ws_name);
 const ROOT = path.basename(__dirname);
 const SVC = path.join(__dirname, svc_name);
+
+const target = JSON.parse(fs.readFileSync(path.join(__dirname, target_name)));
+
+function test(){
+    var smp = path.join(__dirname, "svc", "pg", "hogehoge.tfl", "flow");
+    console.log(smp);
+    fs.readFile(smp, 'utf-8', (err, data) => {
+        var flow = JSON.parse(data);
+        var in_nodes = [];
+        var out_nodes = [];
+        var nodes = Object.keys(flow.nodes);
+        console.log(nodes);
+        for(var i=0; i<nodes.length; i++){
+            var key = nodes[i];
+            var val = flow.nodes[key];
+            console.log(key);
+            console.log(val.baseType);
+            if(val.baseType === 'input'){
+                console.log('input exec.');
+                
+            }else if(val.baseType === 'output'){
+                console.log('output exec.');
+
+            }
+        }
+        // console.log(flow.nodes);
+        // console.log(flow.connections);
+        // console.log(target);
+    });
+}
 
 function what_params(){    
     console.log(WS);
@@ -134,6 +165,7 @@ program.command('dev')
   .description('show dev parameters')
   .action((str, options)=> {
     what_params();
+    test();
 });
 
 program.parse();
