@@ -17,32 +17,54 @@ const SVC = path.join(__dirname, svc_name);
 
 const target = JSON.parse(fs.readFileSync(path.join(__dirname, target_name)));
 
+const input_con = target.nodes.any_if1.convert;
+function conv_input(obj){
+    var conv = input_con;
+    obj.nodeType = conv.nodeType;
+    obj.name = "TEST_IN 抽出 (input)";
+    obj.connectionAttributes = conv.connectionAttributes;
+    // obj.connectionAttributes.dbname = conv.connectionAttributes.dbname;
+    // obj.projectName = conv.connectionAttributes.projectName;
+    // obj.connectionAttributes.datasourceName = conv.connectionAttributes.datasourceName;
+    obj.relation.table = conv.relation.table;
+}
+const output_con = target.nodes.any_if2.convert;
+function conv_output(obj){
+    var conv = output_con;
+    obj.nodeType = conv.nodeType;
+    obj.projectName = conv.projectName;
+    obj.projectLuid = conv.projectLuid;
+    obj.datasourceName = conv.datasourceName;
+    obj.datasourceDescription = conv.datasourceDescription;
+    obj.serverUrl = conv.serverUrl;
+
+    delete obj.hyperOutputFile;
+    delete obj.tdsOutput;
+}
+
 function test(){
     var smp = path.join(__dirname, "svc", "pg", "hogehoge.tfl", "flow");
     console.log(smp);
-    fs.readFile(smp, 'utf-8', (err, data) => {
-        var flow = JSON.parse(data);
-        var in_nodes = [];
-        var out_nodes = [];
-        var nodes = Object.keys(flow.nodes);
-        console.log(nodes);
-        for(var i=0; i<nodes.length; i++){
-            var key = nodes[i];
-            var val = flow.nodes[key];
-            console.log(key);
-            console.log(val.baseType);
-            if(val.baseType === 'input'){
-                console.log('input exec.');
-                
-            }else if(val.baseType === 'output'){
-                console.log('output exec.');
-
-            }
+    var flow = JSON.parse(fs.readFileSync(smp, 'utf-8'));
+    var in_nodes = [];
+    var out_nodes = [];
+    var nodes = Object.keys(flow.nodes);
+    console.log(nodes);
+    for(var i=0; i<nodes.length; i++){
+        var key = nodes[i];
+        var obj = flow.nodes[key];
+        console.log(key);
+        console.log(obj.baseType);
+        if(obj.baseType === 'input'){
+            console.log('input exec.');
+            conv_input(obj);
+            // console.log(obj);
+        }else if(obj.baseType === 'output'){
+            console.log('output exec.');
+            conv_output(obj);
+            console.log(obj);
         }
-        // console.log(flow.nodes);
-        // console.log(flow.connections);
-        // console.log(target);
-    });
+    }
 }
 
 function what_params(){    

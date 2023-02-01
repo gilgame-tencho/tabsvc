@@ -15,7 +15,8 @@
                 "relation":{
                     "table":"[sqlproxy]"
                 }
-            }
+            },
+            "delete":[]
         },
         "any_if2":{
             "if":{
@@ -28,7 +29,11 @@
                 "datasourceName" : "TEST_OUT2",
                 "datasourceDescription" : "",
                 "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite"
-            }
+            },
+            "delete":[
+                "hyperOutputFile",
+                "tdsOutput"
+            ]
         }
     },
     "connections":{
