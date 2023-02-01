@@ -1,0 +1,49 @@
+{
+    "nodes":{
+        "any_if1":{
+            "if":{
+                "baseType":"input"
+            },
+            "convert":{
+                "nodeType":".v2019_3_1.LoadSqlProxy",
+                "name":"any",
+                "connectionAttributes":{
+                    "dbname":"any",
+                    "projectName":"input",
+                    "datasourceName":"any"
+                },
+                "relation":{
+                    "table":"[sqlproxy]"
+                }
+            }
+        },
+        "any_if2":{
+            "if":{
+                "baseType":"output"
+            },
+            "convert":{
+                "nodeType":".v1.PublishExtract",
+                "projectName" : "hyper",
+                "projectLuid" : "447b9453-3507-4cd3-b936-25258f9ac360",
+                "datasourceName" : "TEST_OUT2",
+                "datasourceDescription" : "",
+                "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite"
+            }
+        }
+    },
+    "connections":{
+        "connectionType" : ".v1.SqlConnection",
+        "name" : "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)",
+        "connectionAttributes" : {
+            "server" : "https://prod-apnortheast-a.online.tableau.com",
+            "port" : "443",
+            "query-category" : "Data",
+            "siteUrlName" : "fjdemosite",
+            "channel" : "https",
+            "class" : "sqlproxy",
+            "directory" : "/dataserver",
+            "odbc-native-protocol" : "yes"
+        }
+    },
+    "connectionIds" : [ "any" ]
+}
