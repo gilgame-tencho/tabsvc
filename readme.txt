@@ -1,20 +1,16 @@
-Tableau Dev Tool
+# Tableau Dev Tool
 Tableau Devlopment tool.
+-- Sorce version control for Tableau Prep Builer. & Deploy
 
 ---
-Sorce version control for Tableau Prep Builer. & Deploy
----
-
-
----
-Usage
+## Usage
 ---
 Tableau Prep Builder work.
 from local machene prep file and data.
 please use folder path is [ws].
 
 work done at ws. after root path change dir.
-kick command [save ws]
+exec command decompose .tfl files at 'ws'.
 
 and, make up deploy src. command is [compile]
 
@@ -27,7 +23,7 @@ example:
 
 
 ---
-Install and Setup.
+## Install and Setup.
 ---
 * nodejs install
 * git for windows install ( use git bash. )
@@ -37,7 +33,7 @@ $ npm i
 
 
 ---
-Start up.
+## Start up.
 ---
 
 $ tabsvc init
@@ -53,3 +49,38 @@ $ tabsvc commit
 
 $ tabsvc deploy
 --  samthing enviroment prep deployment. at deploy.conf.
+
+
+---
+## detail degsien
+---
+
+### -*- deploy -*-
+
+edit change enviroment setting based on deploy.conf.
+edit file is flow.
+flow parameters.
+
+
+connections:
+  connectionType:
+  name:
+  connectionAttributes:
+    *
+nodes:
+  # Input node
+  nodeType: 
+  name:
+  connectionAttributes:
+    *
+  relation:
+    table: [sqlproxy]
+  # Output node
+  nodeType:
+  name:
+  projectName:
+  projectLuid:
+  datasourceName
+  datasourceDescription:
+  serverUrl:
+
