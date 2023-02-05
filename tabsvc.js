@@ -153,7 +153,6 @@ function rewrite_flow(tfl_file_name, deploy_to){
     console.log(out_file);
     // fs.writeFileSync(out_file,'utf-8');
     fs.writeFileSync(out_file,JSON.stringify(flow, null, '  '));
-
 }
 
 function what_params(){    
@@ -188,108 +187,118 @@ function test_deploy(){
     ziptfl(path.join(pre, target_tlf, '/'), path.join(dep, target_tlf));
 }
 
-function main_init(){
-    console.log('init function is comming soon!!');
-}
+//###############################
+//####  command main
+//###############################
+{
+    function main_init(){
+        console.log('init function is comming soon!!');
+    }
 
-function main_decompose(){
-    fl.read([WS], option, function(rs){
-        for(var i=0; i<rs.length; i++){
-            var file = rs[i];
-            // console.log(file);
-            var item = path_parse(file.path);
-            // console.log(item);
-    
-            var wdir = svc_name;
-            for(var j=0; j<item.ws_order.length; j++){
-                wdir = path.join(wdir, item.ws_order[j]);
+    function main_decompose(){
+        fl.read([WS], option, function(rs){
+            for(var i=0; i<rs.length; i++){
+                var file = rs[i];
+                // console.log(file);
+                var item = path_parse(file.path);
+                // console.log(item);
+
+                var wdir = svc_name;
+                for(var j=0; j<item.ws_order.length; j++){
+                    wdir = path.join(wdir, item.ws_order[j]);
+                    if (!fs.existsSync(wdir)) {
+                        fs.mkdirSync(wdir);
+                    }
+                }
+                wdir = path.join(wdir, item.name);
                 if (!fs.existsSync(wdir)) {
                     fs.mkdirSync(wdir);
                 }
+                exec('unzip -o ' + item.path + ' -d ' + item.svc_path, (err, stdout, stderr) => {
+                    if (err) { throw err }
+                    console.log(`stdout: ${stdout}`);
+                });
             }
-            wdir = path.join(wdir, item.name);
-            if (!fs.existsSync(wdir)) {
-                fs.mkdirSync(wdir);
-            }
-            exec('unzip -o ' + item.path + ' -d ' + item.svc_path, (err, stdout, stderr) => {
-                if (err) { throw err }
-                console.log(`stdout: ${stdout}`);
-            });
-        }
+        });
+    }
+
+    function main_status(){
+        console.log(SVC);
+        exec('cd ' + __dirname);
+        exec('bash bin/git_status.sh', (err, stdout, stderr) => {
+            if (err) { throw err }
+            console.log(`${stdout}`);
+        });
+    }
+
+    function main_commit(){
+        console.log(SVC);
+        exec('cd ' + __dirname);
+        exec('bash bin/git_commit.sh', (err, stdout, stderr) => {
+            if (err) { console.log(stderr); throw err }
+            console.log(`${stdout}`);
+        });
+    }
+
+    function main_deploy(){
+        console.log('comming soon. deploy!!');
+    }
+}
+
+//###############################
+//####  program commands
+//###############################
+{
+    program
+    .name('tableau src vertion control')
+    .version('0.0.1', '-v, --version, version')
+    .option("-h, --help, help", "Show help.")
+
+    program.command('init')
+    .description('git repo init.')
+    .action((str, options)=> {
+        main_init();
     });
-}
 
-function main_status(){
-    console.log(SVC);
-    exec('cd ' + __dirname);
-    exec('bash bin/git_status.sh', (err, stdout, stderr) => {
-        if (err) { throw err }
-        console.log(`${stdout}`);
+    program.command('decompose')
+    .description('ws prep files to svc file decompose.')
+    .alias('d')
+    .action((str, options)=> {
+        main_decompose();
     });
-}
 
-function main_commit(){
-    console.log(SVC);
-    exec('cd ' + __dirname);
-    exec('bash bin/git_commit.sh', (err, stdout, stderr) => {
-        if (err) { console.log(stderr); throw err }
-        console.log(`${stdout}`);
+    program.command('commit')
+    .description('git commit.')
+    .alias('c')
+    .action((str, options)=> {
+        main_commit();
     });
-}
 
-function main_deploy(){
-    console.log('comming soon. deploy!!');
-}
+    program.command('status')
+    .description('git status.')
+    .alias('s')
+    .action((str, options)=> {
+        main_status();
+    });
 
-program
-  .name('tableau src vertion control')
-  .version('0.0.1', '-v, --version, version')
-  .option("-h, --help, help", "Show help.")
+    program.command('deploy')
+    .description('samthing enviroment prep deployment. at deploy.conf')
+    .argument('[env]', 'deploy enviroment.')
+    .alias('d')
+    .action((str, options)=> {
+        main_deploy();
+    });
 
-program.command('init')
-  .description('git repo init.')
-  .action((str, options)=> {
-    main_init();
-});
+    program.command('dev')
+    .description('show dev parameters')
+    .action((str, options)=> {
+        // what_params();
+        test_deploy();
+    });
 
-program.command('decompose')
-  .description('ws prep files to svc file decompose.')
-  .alias('d')
-  .action((str, options)=> {
-    main_decompose();
-});
+    program.parse();
 
-program.command('commit')
-  .description('git commit.')
-  .alias('c')
-  .action((str, options)=> {
-    main_commit();
-});
-
-program.command('status')
-  .description('git status.')
-  .alias('s')
-  .action((str, options)=> {
-    main_status();
-});
-
-program.command('deploy')
-  .description('samthing enviroment prep deployment. at deploy.conf')
-  .argument('[env]', 'deploy enviroment.')
-  .alias('d')
-  .action((str, options)=> {
-    main_deploy();
-});
-
-program.command('dev')
-  .description('show dev parameters')
-  .action((str, options)=> {
-    // what_params();
-    test_deploy();
-});
-
-program.parse();
-
-if (process.argv.length < 3) {
-  program.help();
+    if (process.argv.length < 3) {
+    program.help();
+    }
 }
