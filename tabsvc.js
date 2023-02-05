@@ -3,6 +3,9 @@ const path = require('path');
 const fl = require('node-filelist');
 const {exec} = require('child_process');
 const { program } = require("commander");
+const zip = require('node-zip');
+const archiver = require('archiver');
+const { arch } = require('os');
 
 // const PWD = process.env.PWD;
 const ws_name = 'ws';
@@ -40,6 +43,43 @@ function conv_output(obj){
 
     delete obj.hyperOutputFile;
     delete obj.tdsOutput;
+}
+
+// const zip_output = fs.createWriteStream('./example.zip');
+const archive = archiver('zip', {
+  zlib: { level: 9 }
+});
+
+function zip2(){
+    var zip_output = fs.createWriteStream('./example.zip');
+    // pipe archive data to the file
+    archive.pipe(zip_output);
+    // append files from a sub-directory, putting its contents at the root of archive
+    archive.directory('svc/pg/hogehoge.tfl/', false);
+
+    // finalize the archive (ie we are done appending files but streams have to finish yet)
+    // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
+    zip_output.on('close', function() {
+        console.log(archive.pointer() + ' total bytes');
+        console.log('archiver has been finalized and the zip_output file descriptor has closed.');
+    });
+
+    // good practice to catch warnings (ie stat failures and other non-blocking errors)
+    archive.on('warning', function(err) {
+        if (err.code === 'ENOENT') {
+            console.log('Warning: ', err);
+        } else {
+            throw err;
+        }
+    });
+    
+    // good practice to catch this error explicitly
+    archive.on('error', function(err) {
+        throw err;
+    });
+    
+    // call finalize method to finalize the archive
+    archive.finalize();
 }
 
 function test(){
@@ -187,7 +227,9 @@ program.command('dev')
   .description('show dev parameters')
   .action((str, options)=> {
     what_params();
-    test();
+    // test();
+    // zipFiles();
+    zip2();
 });
 
 program.parse();

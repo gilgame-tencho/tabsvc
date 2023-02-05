@@ -9,6 +9,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "archiver": "^5.3.1",
     "child_process": "^1.0.2",
     "commander": "^10.0.0",
     "node-filelist": "^1.0.0",
