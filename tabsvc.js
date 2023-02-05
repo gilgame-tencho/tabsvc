@@ -3,9 +3,7 @@ const path = require('path');
 const fl = require('node-filelist');
 const {exec} = require('child_process');
 const { program } = require("commander");
-const zip = require('node-zip');
 const archiver = require('archiver');
-const { arch } = require('os');
 
 // const PWD = process.env.PWD;
 const ws_name = 'ws';
@@ -13,12 +11,14 @@ const svc_name = 'svc';
 // tmp tableau_dev_tool/.
 const option = {"ext": "tfl"};
 const target_name = "target_param.json";
+const deploy_conf_name = "deploy.json";
 
 const WS = path.join(__dirname, ws_name);
 const ROOT = path.basename(__dirname);
 const SVC = path.join(__dirname, svc_name);
 
 const target = JSON.parse(fs.readFileSync(path.join(__dirname, target_name)));
+const deploy_conf = JSON.parse(fs.readFileSync(path.join(__dirname, deploy_conf_name)));
 
 const input_con = target.nodes.any_if1.convert;
 function conv_input(obj){
@@ -50,18 +50,18 @@ const archive = archiver('zip', {
   zlib: { level: 9 }
 });
 
-function zip2(){
-    var zip_output = fs.createWriteStream('./example.zip');
+function ziptfl(input_tfl, output_tfl){
+    var zip_output = fs.createWriteStream(output_tfl);
     // pipe archive data to the file
     archive.pipe(zip_output);
     // append files from a sub-directory, putting its contents at the root of archive
-    archive.directory('svc/pg/hogehoge.tfl/', false);
+    archive.directory(input_tfl, false);
 
     // finalize the archive (ie we are done appending files but streams have to finish yet)
     // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
     zip_output.on('close', function() {
         console.log(archive.pointer() + ' total bytes');
-        console.log('archiver has been finalized and the zip_output file descriptor has closed.');
+        console.log('archiver has been finalized and the output file descriptor has closed.');
     });
 
     // good practice to catch warnings (ie stat failures and other non-blocking errors)
@@ -82,12 +82,10 @@ function zip2(){
     archive.finalize();
 }
 
-function test(){
+function deploy_hogehoge(){
     var smp = path.join(__dirname, "svc", "pg", "hogehoge.tfl", "flow");
     console.log(smp);
     var flow = JSON.parse(fs.readFileSync(smp, 'utf-8'));
-    var in_nodes = [];
-    var out_nodes = [];
     var nodes = Object.keys(flow.nodes);
     console.log(nodes);
     for(var i=0; i<nodes.length; i++){
@@ -99,6 +97,7 @@ function test(){
             console.log('input exec.');
             conv_input(obj);
             // console.log(obj);
+            // ziptfl(in,out);
         }else if(obj.baseType === 'output'){
             console.log('output exec.');
             conv_output(obj);
@@ -226,10 +225,9 @@ program.command('deploy')
 program.command('dev')
   .description('show dev parameters')
   .action((str, options)=> {
-    what_params();
-    // test();
-    // zipFiles();
-    zip2();
+    // what_params();
+    deploy_hogehoge();
+    // zip2();
 });
 
 program.parse();
