@@ -2,5 +2,40 @@
   "enviroments":[
     "dev",
     "om1"
-  ]
+  ],
+  "setting":{
+    "output":{
+      "出力":{
+        "hyperOutputFile" : "C:\\LB\\hyper\\TEST_OUT1.hyper",
+        "projectLuid" : "447b9453-3507-4cd3-b936-25258f9ac360",
+        "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite"
+      },
+      "出力 2":{
+        "hyperOutputFile" : "C:\\LB\\hyper\\TEST_OUT2.hyper",
+        "projectLuid" : "447b9453-3507-4cd3-b936-25258f9ac360",
+        "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite"
+      }
+    },
+    "input":{
+      "Extract (Extract.Extract)":{
+        "connectionAttributes":{
+          "dbname" : "TEST_IN",
+          "datasourceName" : "TEST_IN 抽出"
+        }
+      },
+      "Extract (Extract.Extract) 2":{
+        "connectionAttributes":{
+          "dbname" : "TEST_IN2",
+          "datasourceName" : "TEST_IN2 抽出"
+        }
+      }
+    },
+    "connections":{
+      "name" : "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)",
+      "connectionAttributes":{
+        "server" : "https://prod-apnortheast-a.online.tableau.com",
+        "siteUrlName" : "fjdemosite"
+      }
+    }
+  }
 }

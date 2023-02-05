@@ -39,10 +39,13 @@ function conv_output(obj, connection_id){
     var conv = output_con;
     obj.nodeType = conv.nodeType;
     obj.projectName = conv.projectName;
-    obj.projectLuid = conv.projectLuid;
-    obj.datasourceName = conv.datasourceName;
+    // obj.projectLuid = conv.projectLuid;
+    obj.projectLuid = "447b9453-3507-4cd3-b936-25258f9ac360";
+    // obj.datasourceName = conv.datasourceName;
+    obj.datasourceName = "TEST_OUT2";
     obj.datasourceDescription = conv.datasourceDescription;
-    obj.serverUrl = conv.serverUrl;
+    // obj.serverUrl = conv.serverUrl;
+    obj.serverUrl = "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite";
 
     delete obj.hyperOutputFile;
     delete obj.tdsOutput;
@@ -56,6 +59,10 @@ function conv_connections(obj){
     obj.connections = {};
     obj.connections[ids] = conv;
     obj.connections[ids].id = ids;
+    obj.connections[ids].name = "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)";
+    obj.connections[ids].connectionAttributes.server = "https://prod-apnortheast-a.online.tableau.com";
+    obj.connections[ids].connectionAttributes.siteUrlName = "fjdemosite";
+
     obj.connectionIds = [ids];
     return keys;
 }

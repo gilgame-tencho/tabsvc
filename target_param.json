@@ -25,10 +25,10 @@
             "convert":{
                 "nodeType":".v1.PublishExtract",
                 "projectName" : "hyper",
-                "projectLuid" : "447b9453-3507-4cd3-b936-25258f9ac360",
-                "datasourceName" : "TEST_OUT2",
+                "projectLuid" : "conf",
+                "datasourceName" : "any",
                 "datasourceDescription" : "",
-                "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite"
+                "serverUrl" : "conf"
             },
             "delete":[
                 "hyperOutputFile",
