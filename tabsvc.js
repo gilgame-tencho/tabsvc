@@ -6,10 +6,8 @@ const { program } = require("commander");
 const archiver = require('archiver');
 const fse = require('fs-extra');
 
-// const PWD = process.env.PWD;
 const ws_name = 'ws';
 const svc_name = 'svc';
-// tmp tableau_dev_tool/.
 const option = {"ext": "tfl"};
 const target_name = "target_param.json";
 const deploy_conf_name = "deploy.json";
@@ -47,12 +45,11 @@ function conv_output(obj){
     delete obj.tdsOutput;
 }
 
-// const zip_output = fs.createWriteStream('./example.zip');
 const archive = archiver('zip', {
   zlib: { level: 9 }
 });
-
 function ziptfl(input_tfl, output_tfl){
+    console.log(`call ziptfl() -- in: ${input_tfl}, out: ${output_tfl}`);
     var zip_output = fs.createWriteStream(output_tfl);
     // pipe archive data to the file
     archive.pipe(zip_output);
@@ -77,6 +74,7 @@ function ziptfl(input_tfl, output_tfl){
     
     // good practice to catch this error explicitly
     archive.on('error', function(err) {
+        console.log('Error: ', err);
         throw err;
     });
     
@@ -94,13 +92,14 @@ function copyenvs(){
         var copy_b = path.join(DEPLOY, pre_deploy_tag+env);
         console.log(`a: ${copy_a} -> b: ${copy_b}`);
         fse.copySync(copy_a, copy_b);
-        copy_b = path.join(DEPLOY, deploy_tag+env);
-        fse.copySync(copy_a, copy_b);
+        // copy_b = path.join(DEPLOY, deploy_tag+env);
+        // fse.copySync(copy_a, copy_b);
     }
 }
 
-function deploy_hogehoge(tfl_file_name){
-    var smp = path.join(__dirname, "svc", tfl_file_name, "flow");
+function deploy_hogehoge(tfl_file_name, deploy_to){
+    var smp = path.join(SVC, tfl_file_name, "flow");
+    var out_file = path.join(deploy_to, tfl_file_name, "flow");
     console.log(smp);
     var flow = JSON.parse(fs.readFileSync(smp, 'utf-8'));
     var nodes = Object.keys(flow.nodes);
@@ -121,6 +120,11 @@ function deploy_hogehoge(tfl_file_name){
             // console.log(obj);
         }
     }
+    // console.log(flow);
+    console.log(out_file);
+    // fs.writeFileSync(out_file,'utf-8');
+    fs.writeFileSync(out_file,JSON.stringify(flow));
+
 }
 
 function what_params(){    
@@ -144,6 +148,15 @@ function path_parse(path){
     res.base_name = res.name.replace('.'+option.ext, '');
     res.root = res.order[0];
     return res;
+}
+
+function test_deploy(){
+    copyenvs();
+    var target_tlf = path.join('pg', "hogehoge.tfl");
+    var pre = path.join(__dirname, 'deployment',"src_dev");
+    var dep = path.join(__dirname, 'deployment',"dp_dev");
+    deploy_hogehoge(target_tlf, pre);
+    ziptfl(path.join(pre, target_tlf, '/'), path.join(dep, target_tlf));
 }
 
 function main_init(){
@@ -243,9 +256,7 @@ program.command('dev')
   .description('show dev parameters')
   .action((str, options)=> {
     // what_params();
-    copyenvs();
-    deploy_hogehoge(path.join('pg', "hogehoge.tfl"));
-    // zip2();
+    test_deploy();
 });
 
 program.parse();
