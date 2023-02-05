@@ -38,7 +38,9 @@
     },
     "connections":{
         "connectionType" : ".v1.SqlConnection",
+        "id": "any",
         "name" : "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)",
+        "isPackaged" : false,
         "connectionAttributes" : {
             "server" : "https://prod-apnortheast-a.online.tableau.com",
             "port" : "443",

@@ -21,18 +21,21 @@ const target = JSON.parse(fs.readFileSync(path.join(__dirname, target_name)));
 const deploy_conf = JSON.parse(fs.readFileSync(path.join(__dirname, deploy_conf_name)));
 
 const input_con = target.nodes.any_if1.convert;
-function conv_input(obj){
+function conv_input(obj, connection_id){
     var conv = input_con;
     obj.nodeType = conv.nodeType;
     obj.name = "TEST_IN 抽出 (input)";
     obj.connectionAttributes = conv.connectionAttributes;
-    // obj.connectionAttributes.dbname = conv.connectionAttributes.dbname;
+    obj.connectionAttributes.dbname = "TEST_IN";
     // obj.projectName = conv.connectionAttributes.projectName;
-    // obj.connectionAttributes.datasourceName = conv.connectionAttributes.datasourceName;
+    obj.connectionAttributes.datasourceName = "TEST_IN 抽出";
+
     obj.relation.table = conv.relation.table;
+    obj.connectionId = connection_id;
 }
+
 const output_con = target.nodes.any_if2.convert;
-function conv_output(obj){
+function conv_output(obj, connection_id){
     var conv = output_con;
     obj.nodeType = conv.nodeType;
     obj.projectName = conv.projectName;
@@ -43,6 +46,18 @@ function conv_output(obj){
 
     delete obj.hyperOutputFile;
     delete obj.tdsOutput;
+}
+
+const connection_con = target.connections;
+function conv_connections(obj){
+    var conv = connection_con;
+    var keys = Object.keys(obj.connections);
+    var ids = keys.shift();
+    obj.connections = {};
+    obj.connections[ids] = conv;
+    obj.connections[ids].id = ids;
+    obj.connectionIds = [ids];
+    return keys;
 }
 
 const archive = archiver('zip', {
@@ -97,13 +112,19 @@ function copyenvs(){
     }
 }
 
-function deploy_hogehoge(tfl_file_name, deploy_to){
+function rewrite_flow(tfl_file_name, deploy_to){
     var smp = path.join(SVC, tfl_file_name, "flow");
     var out_file = path.join(deploy_to, tfl_file_name, "flow");
     console.log(smp);
     var flow = JSON.parse(fs.readFileSync(smp, 'utf-8'));
     var nodes = Object.keys(flow.nodes);
     // console.log(nodes);
+
+    // "connections" propatys rewrite:
+    var delete_keys = conv_connections(flow);
+    var connection_id = flow.connectionIds[0];
+
+    // "nodes" propatys rewrite:
     for(var i=0; i<nodes.length; i++){
         var key = nodes[i];
         var obj = flow.nodes[key];
@@ -111,19 +132,20 @@ function deploy_hogehoge(tfl_file_name, deploy_to){
         // console.log(obj.baseType);
         if(obj.baseType === 'input'){
             console.log('update input');
-            conv_input(obj);
+            conv_input(obj, connection_id);
             // console.log(obj);
             // ziptfl(in,out);
         }else if(obj.baseType === 'output'){
             console.log('update output');
-            conv_output(obj);
+            conv_output(obj, connection_id);
             // console.log(obj);
         }
     }
+
     // console.log(flow);
     console.log(out_file);
     // fs.writeFileSync(out_file,'utf-8');
-    fs.writeFileSync(out_file,JSON.stringify(flow));
+    fs.writeFileSync(out_file,JSON.stringify(flow, null, '  '));
 
 }
 
@@ -152,10 +174,10 @@ function path_parse(path){
 
 function test_deploy(){
     copyenvs();
-    var target_tlf = path.join('pg', "hogehoge.tfl");
+    var target_tlf = path.join('pg', 'depth', "foo.tfl");
     var pre = path.join(__dirname, 'deployment',"src_dev");
     var dep = path.join(__dirname, 'deployment',"dp_dev");
-    deploy_hogehoge(target_tlf, pre);
+    rewrite_flow(target_tlf, pre);
     ziptfl(path.join(pre, target_tlf, '/'), path.join(dep, target_tlf));
 }
 
