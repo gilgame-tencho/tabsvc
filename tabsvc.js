@@ -4,6 +4,7 @@ const fl = require('node-filelist');
 const {exec} = require('child_process');
 const { program } = require("commander");
 const archiver = require('archiver');
+const fse = require('fs-extra');
 
 // const PWD = process.env.PWD;
 const ws_name = 'ws';
@@ -16,6 +17,7 @@ const deploy_conf_name = "deploy.json";
 const WS = path.join(__dirname, ws_name);
 const ROOT = path.basename(__dirname);
 const SVC = path.join(__dirname, svc_name);
+const DEPLOY = path.join(__dirname, "deployment");
 
 const target = JSON.parse(fs.readFileSync(path.join(__dirname, target_name)));
 const deploy_conf = JSON.parse(fs.readFileSync(path.join(__dirname, deploy_conf_name)));
@@ -82,26 +84,41 @@ function ziptfl(input_tfl, output_tfl){
     archive.finalize();
 }
 
-function deploy_hogehoge(){
-    var smp = path.join(__dirname, "svc", "pg", "hogehoge.tfl", "flow");
+const pre_deploy_tag = "src_";
+const deploy_tag = "dp_";
+function copyenvs(){
+    var copy_a = SVC;
+    var enviroments = deploy_conf.enviroments;
+    for(var i=0; i<enviroments.length; i++){
+        var env = enviroments[i];
+        var copy_b = path.join(DEPLOY, pre_deploy_tag+env);
+        console.log(`a: ${copy_a} -> b: ${copy_b}`);
+        fse.copySync(copy_a, copy_b);
+        copy_b = path.join(DEPLOY, deploy_tag+env);
+        fse.copySync(copy_a, copy_b);
+    }
+}
+
+function deploy_hogehoge(tfl_file_name){
+    var smp = path.join(__dirname, "svc", tfl_file_name, "flow");
     console.log(smp);
     var flow = JSON.parse(fs.readFileSync(smp, 'utf-8'));
     var nodes = Object.keys(flow.nodes);
-    console.log(nodes);
+    // console.log(nodes);
     for(var i=0; i<nodes.length; i++){
         var key = nodes[i];
         var obj = flow.nodes[key];
-        console.log(key);
-        console.log(obj.baseType);
+        console.log(`key[ ${key} ] is ${obj.baseType}`);
+        // console.log(obj.baseType);
         if(obj.baseType === 'input'){
-            console.log('input exec.');
+            console.log('update input');
             conv_input(obj);
             // console.log(obj);
             // ziptfl(in,out);
         }else if(obj.baseType === 'output'){
-            console.log('output exec.');
+            console.log('update output');
             conv_output(obj);
-            console.log(obj);
+            // console.log(obj);
         }
     }
 }
@@ -226,7 +243,8 @@ program.command('dev')
   .description('show dev parameters')
   .action((str, options)=> {
     // what_params();
-    deploy_hogehoge();
+    copyenvs();
+    deploy_hogehoge(path.join('pg', "hogehoge.tfl"));
     // zip2();
 });
 
