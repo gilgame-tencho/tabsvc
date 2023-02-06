@@ -6,21 +6,51 @@
   "setting":{
     "output":{
       "出力":{
-        "hyperOutputFile" : "C:\\LB\\hyper\\TEST_OUT1.hyper",
-        "projectLuid" : "447b9453-3507-4cd3-b936-25258f9ac360",
-        "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite"
+        "local":{
+          "hyperOutputFile" : "C:\\LB\\hyper\\TEST_OUT1.hyper"
+        },
+        "dev":{
+          "projectLuid" : "447b9453-3507-4cd3-b936-25258f9ac360",
+          "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite"
+        },
+        "om1":{
+          "projectLuid" : "447b9453-3507-4cd3-b936-25258f9ac360",
+          "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite"
+        }
       },
       "出力 2":{
-        "hyperOutputFile" : "C:\\LB\\hyper\\TEST_OUT2.hyper",
-        "projectLuid" : "447b9453-3507-4cd3-b936-25258f9ac360",
-        "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite"
+        "local":{
+          "hyperOutputFile" : "C:\\LB\\hyper\\TEST_OUT2.hyper"
+        },
+        "dev":{
+          "projectLuid" : "447b9453-3507-4cd3-b936-25258f9ac360",
+          "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite"  
+        },
+        "om1":{
+          "projectLuid" : "447b9453-3507-4cd3-b936-25258f9ac360",
+          "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite"  
+        }
       }
     },
     "input":{
       "Extract (Extract.Extract)":{
-        "connectionAttributes":{
-          "dbname" : "TEST_IN",
-          "datasourceName" : "TEST_IN 抽出"
+        "local":{
+          "connectionAttributes":{
+            "dbname" : "TEST_IN",
+            "datasourceName" : "TEST_IN 抽出"
+          }
+        },
+        "dev":{
+          "connectionAttributes":{
+            "dbname" : "TEST_IN",
+            "datasourceName" : "TEST_IN 抽出"
+          }
+        },
+        "om1":{
+          "connectionAttributes":{
+            "dbname" : "TEST_IN",
+            "datasourceName" : "TEST_IN 抽出"
+          }
         }
       },
       "Extract (Extract.Extract) 2":{
