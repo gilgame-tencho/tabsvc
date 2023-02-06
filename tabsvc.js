@@ -20,15 +20,38 @@ const DEPLOY = path.join(__dirname, "deployment");
 const target = JSON.parse(fs.readFileSync(path.join(__dirname, target_name)));
 const deploy_conf = JSON.parse(fs.readFileSync(path.join(__dirname, deploy_conf_name)));
 
+const tableau_server_tag = "LBT_";
+
+function local_to_siteproject(hyperFilePath){
+    var param = {};
+
+    var hyper_path = hyperFilePath.split("\\");
+    var hyper_file_name = hyper_path[hyper_path.length-1];
+    var name = hyper_file_name.replace('.hyper','');
+    var project = hyper_path[hyper_path.length - 2];
+
+    param.name = name;
+    param.project = project;
+    console.log(`[debug] ${hyper_path} ->`);
+    console.log(param);
+    return param;
+}
+
 const input_con = target.nodes.any_if1.convert;
-function conv_input(obj, connection_id){
+function conv_input(obj, connection_id, old_connections){
     var conv = input_con;
+    var hyperFileName = old_connections[obj.connectionId].connectionAttributes.dbname;
+    var site_param = local_to_siteproject(hyperFileName);
+
     obj.nodeType = conv.nodeType;
-    obj.name = "TEST_IN 抽出 (input)";
+    // obj.name = "TEST_IN 抽出 (input)";
+
+    // [Update] connectionAttributes
     obj.connectionAttributes = conv.connectionAttributes;
-    obj.connectionAttributes.dbname = "TEST_IN";
-    // obj.projectName = conv.connectionAttributes.projectName;
-    obj.connectionAttributes.datasourceName = "TEST_IN 抽出";
+    // obj.connectionAttributes.dbname = "TEST_IN";
+    obj.connectionAttributes.dbname = site_param.name;
+    obj.projectName = site_param.project;
+    obj.connectionAttributes.datasourceName = site_param.name;
 
     obj.relation.table = conv.relation.table;
     obj.connectionId = connection_id;
@@ -37,14 +60,13 @@ function conv_input(obj, connection_id){
 const output_con = target.nodes.any_if2.convert;
 function conv_output(obj, connection_id){
     var conv = output_con;
+    var site_param = local_to_siteproject(obj.hyperOutputFile);
+
     obj.nodeType = conv.nodeType;
-    obj.projectName = conv.projectName;
-    // obj.projectLuid = conv.projectLuid;
+    obj.projectName = site_param.project;
     obj.projectLuid = "447b9453-3507-4cd3-b936-25258f9ac360";
-    // obj.datasourceName = conv.datasourceName;
-    obj.datasourceName = "TEST_OUT2";
+    obj.datasourceName = site_param.name;
     obj.datasourceDescription = conv.datasourceDescription;
-    // obj.serverUrl = conv.serverUrl;
     obj.serverUrl = "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite";
 
     delete obj.hyperOutputFile;
@@ -54,6 +76,7 @@ function conv_output(obj, connection_id){
 const connection_con = target.connections;
 function conv_connections(obj){
     var conv = connection_con;
+    var old_connections = Object.assign({}, obj.connections);
     var keys = Object.keys(obj.connections);
     var ids = keys.shift();
     obj.connections = {};
@@ -64,7 +87,8 @@ function conv_connections(obj){
     obj.connections[ids].connectionAttributes.siteUrlName = "fjdemosite";
 
     obj.connectionIds = [ids];
-    return keys;
+    return [old_connections, keys];
+    // --> return [old_connections, delete_keys]
 }
 
 const archive = archiver('zip', {
@@ -128,7 +152,7 @@ function rewrite_flow(tfl_file_name, deploy_to){
     // console.log(nodes);
 
     // "connections" propatys rewrite:
-    var delete_keys = conv_connections(flow);
+    var [old_connections, delete_keys] = conv_connections(flow);
     var connection_id = flow.connectionIds[0];
 
     // "nodes" propatys rewrite:
@@ -139,7 +163,7 @@ function rewrite_flow(tfl_file_name, deploy_to){
         // console.log(obj.baseType);
         if(obj.baseType === 'input'){
             console.log('update input');
-            conv_input(obj, connection_id);
+            conv_input(obj, connection_id, old_connections);
             // console.log(obj);
             // ziptfl(in,out);
         }else if(obj.baseType === 'output'){
@@ -180,7 +204,7 @@ function path_parse(path){
 
 function test_deploy(){
     copyenvs();
-    var target_tlf = path.join('pg', 'depth', "foo.tfl");
+    var target_tlf = path.join('prep', "全社KPIマート_JH_local.tfl");
     var pre = path.join(__dirname, 'deployment',"src_dev");
     var dep = path.join(__dirname, 'deployment',"dp_dev");
     rewrite_flow(target_tlf, pre);

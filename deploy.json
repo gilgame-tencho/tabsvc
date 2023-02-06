@@ -4,6 +4,44 @@
     "om1"
   ],
   "setting":{
+    "dev":{
+      "project":{
+        "VC_LB_システム処理データ" : "93cd33b8-ba3c-46a1-8a70-ee7db2e71870",
+        "prep":"75cd03f6-5b78-4628-8cb8-817b73ca8b98",
+        "input":"311c72b5-fc1e-4aee-b7f7-2add7eeca960",
+        "hyper":"447b9453-3507-4cd3-b936-25258f9ac360",
+        "pre_common":"",
+        "その他":"e79a0875-cba2-45fc-9c30-5cbd895ddc5e",
+        "VC_LB_実績レポート":"4c1256de-3925-4033-9c64-685c3566f46e",
+        "VC_LB_個人KPI":"921ad15d-c0ae-4e5c-8c26-754c0c9cccf4",
+        "VC_LB_全社KPI":"3c72bd14-e654-4642-9b43-2cf577b9bf51",
+        "VC_LB_その他":"ebbf2631-445c-41b5-963c-0d548d67285f"
+      },
+      "server":{
+        "name" : "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)",
+        "serverUrl" : "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite",
+        "siteUrlName" : "fjdemosite"
+      }
+    },
+    "om1":{
+      "project":{
+        "VC_LB_システム処理データ" : "",
+        "prep":"",
+        "input":"",
+        "hyper":"",
+        "pre_common":"",
+        "その他":"",
+        "VC_LB_実績レポート":"",
+        "VC_LB_個人KPI":"",
+        "VC_LB_全社KPI":"",
+        "VC_LB_その他":""
+      },
+      "server":{
+        "name" : "",
+        "serverUrl" : "",
+        "siteUrlName" : "LB_kensho"
+      }
+    },
     "output":{
       "出力":{
         "local":{
