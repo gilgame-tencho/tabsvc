@@ -38,39 +38,46 @@ function local_to_siteproject(hyperFilePath){
 }
 
 const input_con = target.nodes.any_if1.convert;
-function conv_input(obj, connection_id, old_connections){
+function conv_input(node, connection_param){
     var conv = input_con;
-    var hyperFileName = old_connections[obj.connectionId].connectionAttributes.dbname;
+    var conp = connection_param;
+
+    if(conp.old_connections[node.connectionId].connectionAttributes.class != "hyper"){
+        console.log(`connection is : class [${conp.old_connections[node.connectionId].connectionAttributes.class}]`);
+        return
+    }
+
+    // ## IF connection is 'hyper'
+    var hyperFileName = conp.old_connections[node.connectionId].connectionAttributes.dbname;
     var site_param = local_to_siteproject(hyperFileName);
 
-    obj.nodeType = conv.nodeType;
-    // obj.name = "TEST_IN 抽出 (input)";
+    node.nodeType = conv.nodeType;
 
-    // [Update] connectionAttributes
-    obj.connectionAttributes = conv.connectionAttributes;
-    // obj.connectionAttributes.dbname = "TEST_IN";
-    obj.connectionAttributes.dbname = site_param.name;
-    obj.projectName = site_param.project;
-    obj.connectionAttributes.datasourceName = site_param.name;
+    // ## [Update] connectionAttributes
+    node.connectionAttributes = conv.connectionAttributes;
+    node.connectionAttributes.dbname = site_param.name;
+    node.projectName = site_param.project;
+    node.connectionAttributes.datasourceName = site_param.name;
 
-    obj.relation.table = conv.relation.table;
-    obj.connectionId = connection_id;
+    node.relation.table = conv.relation.table;
+    node.connectionId = conp.connection_id;
 }
 
 const output_con = target.nodes.any_if2.convert;
-function conv_output(obj, connection_id){
+function conv_output(node, connection_param){
     var conv = output_con;
-    var site_param = local_to_siteproject(obj.hyperOutputFile);
+    var conp = connection_param;
+    var site_param = local_to_siteproject(node.hyperOutputFile);
 
-    obj.nodeType = conv.nodeType;
-    obj.projectName = site_param.project;
-    obj.projectLuid = "447b9453-3507-4cd3-b936-25258f9ac360";
-    obj.datasourceName = site_param.name;
-    obj.datasourceDescription = conv.datasourceDescription;
-    obj.serverUrl = "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite";
+    node.nodeType = conv.nodeType;
+    node.projectName = site_param.project;
+    node.projectLuid = "447b9453-3507-4cd3-b936-25258f9ac360";
+    node.datasourceName = site_param.name;
+    node.datasourceDescription = conv.datasourceDescription;
+    node.serverUrl = "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite";
 
-    delete obj.hyperOutputFile;
-    delete obj.tdsOutput;
+    delete node.hyperOutputFile;
+    delete node.tdsOutput;
 }
 
 const connection_con = target.connections;
@@ -78,7 +85,18 @@ function conv_connections(obj){
     var conv = connection_con;
     var old_connections = Object.assign({}, obj.connections);
     var keys = Object.keys(obj.connections);
-    var ids = keys.shift();
+    var delete_keys = [];
+    var ids = null;
+    for(var i=0; i<keys.length; i++){
+        var key = keys[i];
+        var con = obj.connections[key];
+        if(con.connectionAttributes.class === "hyper"){
+            delete_keys.push(key);
+            if(!ids){ ids = key }
+            delete obj.connections[key];
+        }
+    }
+    // var ids = keys.shift();
     obj.connections = {};
     obj.connections[ids] = conv;
     obj.connections[ids].id = ids;
@@ -149,33 +167,36 @@ function rewrite_flow(tfl_file_name, deploy_to){
     console.log(smp);
     var flow = JSON.parse(fs.readFileSync(smp, 'utf-8'));
     var nodes = Object.keys(flow.nodes);
-    // console.log(nodes);
 
     // "connections" propatys rewrite:
     var [old_connections, delete_keys] = conv_connections(flow);
     var connection_id = flow.connectionIds[0];
+    var connection_param = {
+        "connection_id" : connection_id,
+        "old_connections" : old_connections,
+        "delete_keys" : delete_keys,
+        "connections" : flow.connections
+    }
 
     // "nodes" propatys rewrite:
     for(var i=0; i<nodes.length; i++){
         var key = nodes[i];
-        var obj = flow.nodes[key];
-        console.log(`key[ ${key} ] is ${obj.baseType}`);
-        // console.log(obj.baseType);
-        if(obj.baseType === 'input'){
-            console.log('update input');
-            conv_input(obj, connection_id, old_connections);
-            // console.log(obj);
+        var node = flow.nodes[key];
+        // console.log(`key[ ${key} ] is ${node.baseType}`);
+        // console.log(node.baseType);
+        if(node.baseType === 'input'){
+            console.log(`[debug] update input: ${node.name}`);
+            conv_input(node, connection_param);
+            // console.log(node);
             // ziptfl(in,out);
-        }else if(obj.baseType === 'output'){
-            console.log('update output');
-            conv_output(obj, connection_id);
-            // console.log(obj);
+        }else if(node.baseType === 'output'){
+            console.log(`[debug] update output: ${node.name}`);
+            conv_output(node, connection_param);
+            // console.log(node);
         }
     }
 
-    // console.log(flow);
     console.log(out_file);
-    // fs.writeFileSync(out_file,'utf-8');
     fs.writeFileSync(out_file,JSON.stringify(flow, null, '  '));
 }
 
