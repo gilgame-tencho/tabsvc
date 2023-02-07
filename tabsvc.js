@@ -288,6 +288,11 @@ function test_deploy(){
     function main_deploy(){
         console.log('comming soon. deploy!!');
     }
+
+    function main_clean(){
+        // rm deployment -rf
+        console.log('comming soon. clean.');
+    }
 }
 
 //###############################
@@ -332,6 +337,12 @@ function test_deploy(){
     .alias('d')
     .action((str, options)=> {
         main_deploy();
+    });
+
+    program.command('clean')
+    .description("clean 'deployment'")
+    .action((str, options)=> {
+        main_clean();
     });
 
     program.command('dev')
