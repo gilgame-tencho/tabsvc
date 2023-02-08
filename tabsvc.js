@@ -10,7 +10,6 @@ const ws_name = 'ws';
 const svc_name = 'svc';
 const option = {"ext": "tfl"};
 const target_name = "target_param.json";
-const deploy_conf_name = "deploy.json";
 
 const WS = path.join(__dirname, ws_name);
 const ROOT = path.basename(__dirname);
@@ -18,7 +17,8 @@ const SVC = path.join(__dirname, svc_name);
 const DEPLOY = path.join(__dirname, "deployment");
 
 const target = JSON.parse(fs.readFileSync(path.join(__dirname, target_name)));
-const deploy_conf = JSON.parse(fs.readFileSync(path.join(__dirname, deploy_conf_name)));
+const deploy_conf = JSON.parse(fs.readFileSync(path.join(__dirname, 'conf', "deploy.json")));
+const csv = fs.readFileSync(path.join(__dirname, 'conf', 'tabsvc_param.csv'));
 
 const tableau_server_tag = "LBT_";
 
@@ -32,6 +32,7 @@ function local_to_siteproject(hyperFilePath){
 
     param.name = name;
     param.project = project;
+    // param.dbname = "";
     console.log(`[debug] ${hyper_path} ->`);
     console.log(param);
     return param;
@@ -50,17 +51,27 @@ function conv_input(node, connection_param){
     // ## IF connection is 'hyper'
     var hyperFileName = conp.old_connections[node.connectionId].connectionAttributes.dbname;
     var site_param = local_to_siteproject(hyperFileName);
+    var hyperName = conp.old_connections[node.connectionId].name;
+    var dbname = deploy_conf.enviroments["dev"].hyper[hyperName];
 
     node.nodeType = conv.nodeType;
 
     // ## [Update] connectionAttributes
     node.connectionAttributes = conv.connectionAttributes;
-    node.connectionAttributes.dbname = site_param.name;
+    node.connectionAttributes.dbname = dbname;
     node.projectName = site_param.project;
     node.connectionAttributes.datasourceName = site_param.name;
 
     node.relation.table = conv.relation.table;
     node.connectionId = conp.connection_id;
+
+    var debug = {};
+    debug.projectName = node.projectName;
+    debug.connectionId = node.connectionId;
+    debug.table = node.relation.table;
+    debug.nodeType = node.nodeType;
+    console.log(node.connectionAttributes);
+    console.log(debug);
 }
 
 const output_con = target.nodes.any_if2.convert;
@@ -74,7 +85,8 @@ function conv_output(node, connection_param){
     node.projectLuid = "447b9453-3507-4cd3-b936-25258f9ac360";
     node.datasourceName = site_param.name;
     node.datasourceDescription = conv.datasourceDescription;
-    node.serverUrl = "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite";
+    // node.serverUrl = "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite";
+    node.serverUrl = deploy_conf.enviroments["dev"].connections["TableauServer"].serverUrl;
 
     delete node.hyperOutputFile;
     delete node.tdsOutput;
@@ -82,43 +94,50 @@ function conv_output(node, connection_param){
 
 const connection_con = target.connections;
 function conv_connections(obj){
+    console.log("Start conv_connections");
     var conv = connection_con;
     var old_connections = Object.assign({}, obj.connections);
     var keys = Object.keys(obj.connections);
     var delete_keys = [];
-    var ids = null;
+    var connection_id = null;
     for(var i=0; i<keys.length; i++){
         var key = keys[i];
         var con = obj.connections[key];
+        console.log(con.connectionAttributes);
         if(con.connectionAttributes.class === "hyper"){
-            delete_keys.push(key);
-            if(!ids){ ids = key }
+            console.log("go");
+            if(connection_id == null){
+                connection_id = key;
+            }else{
+                delete_keys.push(key);
+            }
             delete obj.connections[key];
+        }else{
+            console.log("no");
         }
+        console.log(`connection_id:${connection_id}, key:${key}`);
     }
-    // var ids = keys.shift();
-    obj.connections = {};
-    obj.connections[ids] = conv;
-    obj.connections[ids].id = ids;
-    obj.connections[ids].name = "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)";
-    obj.connections[ids].connectionAttributes.server = "https://prod-apnortheast-a.online.tableau.com";
-    obj.connections[ids].connectionAttributes.siteUrlName = "fjdemosite";
+    // var connection_id = keys.shift();
+    // obj.connections = {};
+    obj.connections[connection_id] = conv;
+    obj.connections[connection_id].id = connection_id;
+    obj.connections[connection_id].name = "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)";
+    obj.connections[connection_id].connectionAttributes.server = "https://prod-apnortheast-a.online.tableau.com";
+    obj.connections[connection_id].connectionAttributes.siteUrlName = "fjdemosite";
 
-    obj.connectionIds = [ids];
-    return [old_connections, keys];
+    obj.connectionIds = Object.keys(obj.connections);
+    return [connection_id, old_connections, delete_keys];
     // #--> return [old_connections, delete_keys]
 }
 
 class tabsvc_master{
     constructor(){
-        this.lock_archive = false;
         this.zip_queue = [];
-        this.zip_output = null;
 
         this.intervalID = setInterval(() => {
             console.log("[tab zipper] Let's do our best today!");
-            console.log(`  zip_queue.length: ${this.zip_queue.length}, lock_archive: ${this.lock_archive}, zip_out: ${this.zip_output}`)
-            console.log(this.zip_queue);
+            console.log(`  zip_queue.length: ${this.zip_queue.length}`)
+            // console.log(this.zip_queue);
             if(this.zip_queue == 0) {
                 console.log("All Done!!");
                 setTimeout(()=>{
@@ -126,16 +145,9 @@ class tabsvc_master{
                 })
             }
             if(this.zip_queue.length > 0){
-                this.lock_archive = true;
                 this.ziptfl();
             }
         }, 1000);
-    }
-
-    clean(){
-        console.log("call CLEAN!!!!!!!!!!!!!!!##############");
-        this.lock_archive = false;
-        this.zip_output = null;
     }
 
     ziptfl(){
@@ -145,7 +157,7 @@ class tabsvc_master{
         var next_task = this.zip_queue.shift();
         var input_tfl = next_task.input_tfl;
         var output_tfl = next_task.output_tfl;
-        console.log(`  [zip start] call ziptfl() -- in: ${input_tfl}, out: ${output_tfl}`);
+        console.log(`  [zip start] call ziptfl(): ${output_tfl}`);
         // var zip_output = fs.createWriteStream(output_tfl);
         let zip_output = fs.createWriteStream(output_tfl);
         // pipe archive data to the file
@@ -156,9 +168,8 @@ class tabsvc_master{
         // finalize the archive (ie we are done appending files but streams have to finish yet)
         // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
         zip_output.on('close', function() {
-            // console.log(archive.pointer() + ' total bytes');
-            console.log('  [zip close] archiver has been finalized and the output file descriptor has closed.');
-            console.log(`  [zip close] call ziptfl() -- in: ${input_tfl}, out: ${output_tfl}`);
+            // console.log('  [zip close] archiver has been finalized and the output file descriptor has closed.');
+            console.log(`  [zip close] call ziptfl(): ${output_tfl}`);
         });
 
         // good practice to catch this error explicitly
@@ -180,7 +191,7 @@ const pre_deploy_tag = "src_";
 const deploy_tag = "dp_";
 function copyenvs(){
     // var copy_a = SVC;
-    var enviroments = deploy_conf.enviroments;
+    var enviroments = Object.keys(deploy_conf.enviroments);
     for(var i=0; i<enviroments.length; i++){
         var env = enviroments[i];
         var copy_b = path.join(DEPLOY, pre_deploy_tag+env);
@@ -204,14 +215,15 @@ function rewrite_flow(tfl_file_name, deploy_to){
     var nodes = Object.keys(flow.nodes);
 
     // "connections" propatys rewrite:
-    var [old_connections, delete_keys] = conv_connections(flow);
-    var connection_id = flow.connectionIds[0];
+    var [connection_id, old_connections, delete_keys] = conv_connections(flow);
+    // var connection_id = flow.connectionIds[0];
     var connection_param = {
         "connection_id" : connection_id,
         "old_connections" : old_connections,
         "delete_keys" : delete_keys,
         "connections" : flow.connections
     }
+    console.log(connection_param);
 
     // "nodes" propatys rewrite:
     for(var i=0; i<nodes.length; i++){
@@ -219,10 +231,10 @@ function rewrite_flow(tfl_file_name, deploy_to){
         var node = flow.nodes[key];
         // console.log(`key[ ${key} ] is ${node.baseType}`);
         // console.log(node.baseType);
-        if(node.baseType === 'input' && node.hyperOutputFile){
+        if(node.baseType === 'input'){
             console.log(`[debug] update input: ${node.name}`);
             conv_input(node, connection_param);
-        }else if(node.baseType === 'output' && node.hyperOutputFile){
+        }else if(node.baseType === 'output'){
             console.log(`[debug] update output: ${node.name}`);
             conv_output(node, connection_param);
         }
@@ -260,18 +272,13 @@ function path_parse(_path){
 }
 
 function test_deploy(){
-    copyenvs();
-    var target_tlf = path.join('prep', "全社KPIマート_JH_local.tfl");
-    var pre = path.join(__dirname, 'deployment',"src_dev");
-    var dep = path.join(__dirname, 'deployment',"dp_dev");
-    rewrite_flow(target_tlf, pre);
-    // ziptfl(path.join(pre, target_tlf, '/'), path.join(dep, target_tlf));
+    console.log(csv);
 }
 
 function all_deploy(){
-    var envs = deploy_conf.setting;
+    var envs = deploy_conf.enviroments;
     // var keys = Object.keys(envs);
-    var keys = ["om1"];
+    var keys = ["dev"];
 
     copyenvs();
 
