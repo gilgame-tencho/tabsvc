@@ -106,15 +106,12 @@ function conv_connections(obj){
 
     obj.connectionIds = [ids];
     return [old_connections, keys];
-    // --> return [old_connections, delete_keys]
+    // #--> return [old_connections, delete_keys]
 }
 
 class tabsvc_master{
     constructor(){
         this.lock_archive = false;
-        // this.archive = archiver('zip', {
-        //     zlib: { level: 9 }
-        // });
         this.zip_queue = [];
         this.zip_output = null;
 
@@ -164,19 +161,6 @@ class tabsvc_master{
             console.log(`  [zip close] call ziptfl() -- in: ${input_tfl}, out: ${output_tfl}`);
         });
 
-        // zip_output.on('end', function() {
-        //     console.log('  [zip end] Data has been drained');
-        // });
-
-        // good practice to catch warnings (ie stat failures and other non-blocking errors)
-        // archive.on('warning', function(err) {
-        //     if (err.code === 'ENOENT') {
-        //         console.log('  [zip Warning]: ', err);
-        //     } else {
-        //         throw err;
-        //     }
-        // });
-
         // good practice to catch this error explicitly
         archive.on('error', function(err) {
             console.log('  [zip Error!]: ', err);
@@ -191,65 +175,6 @@ class tabsvc_master{
 }
 
 const ms = new tabsvc_master();
-// const archive = archiver('zip', {
-//   zlib: { level: 9 }
-// });
-// function ziptfl(input_tfl, output_tfl){
-//     ms.lock_archive = true;
-//     console.log(`  [zip start] call ziptfl() -- in: ${input_tfl}, out: ${output_tfl}`);
-//     var zip_output = fs.createWriteStream(output_tfl);
-//     // pipe archive data to the file
-//     archive.pipe(zip_output);
-//     // append files from a sub-directory, putting its contents at the root of archive
-//     archive.directory(input_tfl, false);
-
-//     // finalize the archive (ie we are done appending files but streams have to finish yet)
-//     // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
-//     zip_output.on('close', function() {
-//         console.log(archive.pointer() + ' total bytes');
-//         console.log('  [zip close] archiver has been finalized and the output file descriptor has closed.');
-//         console.log(`  [zip close] call ziptfl() -- in: ${input_tfl}, out: ${output_tfl}`);
-//         ms.lock_archive = false;
-//     });
-
-//     zip_output.on('end', function() {
-//         console.log('  [zip end] Data has been drained');
-//     });
-
-//     // good practice to catch warnings (ie stat failures and other non-blocking errors)
-//     archive.on('warning', function(err) {
-//         if (err.code === 'ENOENT') {
-//             console.log('  [zip Warning]: ', err);
-//         } else {
-//             throw err;
-//         }
-//     });
-    
-//     // good practice to catch this error explicitly
-//     archive.on('error', function(err) {
-//         console.log('  [zip Error!]: ', err);
-//         // throw err;
-//         console.log('  [zip ERR] Missing zip file: ', output_tfl);
-//         return;
-//     });
-    
-//     // call finalize method to finalize the archive
-//     archive.finalize();
-// }
-// function controll_ziptfl(input_tfl, output_tfl){
-//     var done = false;
-
-//     while(!done){
-//         if(ms.lock_archive){
-//         }else{
-//             // ms.lock_archive = true;
-//             ziptfl(input_tfl, output_tfl);
-//             // ms.lock_archive = false;
-//             done = true;
-//         }
-//         setTimeout(() => {}, 300);
-//     }
-// }
 
 const pre_deploy_tag = "src_";
 const deploy_tag = "dp_";
