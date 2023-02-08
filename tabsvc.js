@@ -113,7 +113,7 @@ const archive = archiver('zip', {
   zlib: { level: 9 }
 });
 function ziptfl(input_tfl, output_tfl){
-    console.log(`call ziptfl() -- in: ${input_tfl}, out: ${output_tfl}`);
+    console.log(`[start] call ziptfl() -- in: ${input_tfl}, out: ${output_tfl}`);
     var zip_output = fs.createWriteStream(output_tfl);
     // pipe archive data to the file
     archive.pipe(zip_output);
@@ -127,6 +127,10 @@ function ziptfl(input_tfl, output_tfl){
         console.log('archiver has been finalized and the output file descriptor has closed.');
     });
 
+    zip_output.on('end', function() {
+        console.log('Data has been drained');
+    });
+
     // good practice to catch warnings (ie stat failures and other non-blocking errors)
     archive.on('warning', function(err) {
         if (err.code === 'ENOENT') {
@@ -138,26 +142,49 @@ function ziptfl(input_tfl, output_tfl){
     
     // good practice to catch this error explicitly
     archive.on('error', function(err) {
-        console.log('Error: ', err);
-        throw err;
+        console.log('Error!: ', err);
+        // throw err;
+        console.log('[ERR] Missing zip file: ', output_tfl);
+        return;
     });
     
     // call finalize method to finalize the archive
     archive.finalize();
+    console.log(`[end] call ziptfl() -- in: ${input_tfl}, out: ${output_tfl}`);
+}
+let lock_archive = false;
+function controll_ziptfl(input_tfl, output_tfl){
+    var done = false;
+
+    while(!done){
+        if(lock_archive){
+            setTimeout(() => {}, 300);
+        }else{
+            lock_archive = true;
+            ziptfl(input_tfl, output_tfl);
+            lock_archive = false;
+            done = true;
+        }
+    }
 }
 
 const pre_deploy_tag = "src_";
 const deploy_tag = "dp_";
 function copyenvs(){
-    var copy_a = SVC;
+    // var copy_a = SVC;
     var enviroments = deploy_conf.enviroments;
     for(var i=0; i<enviroments.length; i++){
         var env = enviroments[i];
         var copy_b = path.join(DEPLOY, pre_deploy_tag+env);
-        console.log(`a: ${copy_a} -> b: ${copy_b}`);
-        fse.copySync(copy_a, copy_b);
+        console.log(`a: ${SVC} -> b: ${copy_b}`);
+        fse.copySync(SVC, copy_b);
         // copy_b = path.join(DEPLOY, deploy_tag+env);
-        // fse.copySync(copy_a, copy_b);
+        // fse.copySync(SVC, copy_b);
+        copy_b = path.join(DEPLOY, deploy_tag+env);
+        // if (!fs.existsSync(dir)) {
+        //     fs.mkdirSync(dir);
+        // }
+        fse.copySync(WS, copy_b);
     }
 }
 
@@ -187,12 +214,9 @@ function rewrite_flow(tfl_file_name, deploy_to){
         if(node.baseType === 'input'){
             console.log(`[debug] update input: ${node.name}`);
             conv_input(node, connection_param);
-            // console.log(node);
-            // ziptfl(in,out);
         }else if(node.baseType === 'output'){
             console.log(`[debug] update output: ${node.name}`);
             conv_output(node, connection_param);
-            // console.log(node);
         }
     }
 
@@ -206,16 +230,20 @@ function what_params(){
     console.log(option);
 }
 
-function path_parse(path){
+function path_parse(_path){
     var res = {};
-    res.path = path;
-    res.order = path.split('\\');
+    res.path = _path;
+    res.order = _path.split('\\');
     res.root_index = res.order.findIndex(element => element === ROOT) + 2;
     res.ws_order = res.order.concat().slice(res.root_index, res.order.length - 1);
 
     var tmp_order = res.order.concat();
     tmp_order.splice(res.root_index - 1, 1, svc_name);
     res.svc_path = tmp_order.join('\\');
+
+    tmp_order = res.order.concat();
+    tmp_order.splice(res.root_index - 1, 1, path.join('deployment','src_dev'));
+    res.src_dev = tmp_order.join('\\');
 
     res.name = res.order[res.order.length -1];
     res.base_name = res.name.replace('.'+option.ext, '');
@@ -230,6 +258,57 @@ function test_deploy(){
     var dep = path.join(__dirname, 'deployment',"dp_dev");
     rewrite_flow(target_tlf, pre);
     ziptfl(path.join(pre, target_tlf, '/'), path.join(dep, target_tlf));
+}
+
+function all_deploy(){
+    var envs = deploy_conf.setting;
+    // var keys = Object.keys(envs);
+    var keys = ["om1"];
+
+    copyenvs();
+
+    fl.read([WS], option, function(rs){
+        for(var i=0; i<rs.length; i++){
+            var file = rs[i];
+            console.log(file);
+            var item = path_parse(file.path);
+            // console.log(item);
+
+            var wdir = path.join('deployment','src_dev');
+            for(var j=0; j<item.ws_order.length; j++){
+                wdir = path.join(wdir, item.ws_order[j]);
+                if (!fs.existsSync(wdir)) {
+                    fs.mkdirSync(wdir);
+                }
+            }
+            var target_tlf = path.join(item.ws_order.join('/'), item.name);
+
+            for(var j=0; j<keys.length; j++){
+                var key = keys[j];
+                var env = envs[key];
+                var pre = path.join(__dirname, 'deployment',"src_" + key);
+                var dep = path.join(__dirname, 'deployment',"dp_" + key);
+
+                var param = {};
+                param.target_tlf = target_tlf;
+                param.pre = pre;
+                param.dep = dep;
+                param.env = env;
+                console.log("call deploy!!!!!!!!");
+                svc_deploy(param);
+            }
+        }
+    });
+}
+
+function svc_deploy(param){
+    try {
+        rewrite_flow(param.target_tlf, param.pre);
+        controll_ziptfl(path.join(param.pre, param.target_tlf, '/'), path.join(param.dep, param.target_tlf));
+    }
+    catch(e){
+        console.log("catch err.", e);
+    }
 }
 
 //###############################
@@ -286,7 +365,8 @@ function test_deploy(){
     }
 
     function main_deploy(){
-        console.log('comming soon. deploy!!');
+        // console.log('comming soon. deploy!!');
+        all_deploy();
     }
 
     function main_clean(){
