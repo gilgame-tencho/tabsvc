@@ -120,7 +120,7 @@ class tabsvc_master{
             console.log(`  zip_queue.length: ${this.zip_queue.length}, lock_archive: ${this.lock_archive}, zip_out: ${this.zip_output}`)
             console.log(this.zip_queue);
             if(this.zip_queue == 0) {
-                console.log("全て終了しました");
+                console.log("All Done!!");
                 setTimeout(()=>{
                     clearInterval(this.intervalID)
                 })
@@ -219,10 +219,10 @@ function rewrite_flow(tfl_file_name, deploy_to){
         var node = flow.nodes[key];
         // console.log(`key[ ${key} ] is ${node.baseType}`);
         // console.log(node.baseType);
-        if(node.baseType === 'input'){
+        if(node.baseType === 'input' && node.hyperOutputFile){
             console.log(`[debug] update input: ${node.name}`);
             conv_input(node, connection_param);
-        }else if(node.baseType === 'output'){
+        }else if(node.baseType === 'output' && node.hyperOutputFile){
             console.log(`[debug] update output: ${node.name}`);
             conv_output(node, connection_param);
         }
@@ -302,7 +302,6 @@ function all_deploy(){
                 param.pre = pre;
                 param.dep = dep;
                 param.env = env;
-                console.log("call deploy!!!!!!!!");
                 svc_deploy(param);
             }
         }
