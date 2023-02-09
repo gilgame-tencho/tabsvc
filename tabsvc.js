@@ -79,7 +79,7 @@ function conv_input(node, connection_param, flow){
 
 const output_con = target.nodes.any_if2.convert;
 function conv_output(node, connection_param){
-    var conv = Object.assign({}, output_con);
+    var conv = obj_copy(output_con);
     var conp = connection_param;
     var site_param = local_to_siteproject(node.hyperOutputFile);
 
@@ -98,41 +98,42 @@ function conv_output(node, connection_param){
 
 const connection_con = target.connections;
 function conv_connections(obj){
-    var conv = connection_con;
-    var old_connections = Object.assign({}, obj.connections);
+    const conv = connection_con;
+    var old_connections = obj_copy(obj.connections);
     var keys = Object.keys(obj.connections);
     var delete_keys = [];
-    var connection_id = null;
+    var connection_tableauServer = null;
     for(var i=0; i<keys.length; i++){
         var key = keys[i];
         var con = obj.connections[key];
         console.log(con.connectionAttributes);
         if(con.connectionAttributes.class === "hyper"){
             // console.log("go");
-            if(connection_id == null){
-                connection_id = key;
+            if(connection_tableauServer == null){
+                connection_tableauServer = key;
             }else{
                 delete_keys.push(key);
             }
             delete obj.connections[key];
+        }else if(con.connectionAttributes.class === "postgres"){
+            // con = obj_copy(conv.postgres);
+            con.name = "vcdb";
+            con.connectionAttributes.server = deploy_conf.enviroments[deploy_env].connections.VC.name;
         }else{
             // console.log("no");
         }
-        // console.log(`connection_id:${connection_id}, key:${key}`);
+        // console.log(`connection_tableauServer:${connection_tableauServer}, key:${key}`);
     }
-    // var connection_id = keys.shift();
+    // var connection_tableauServer = keys.shift();
     // obj.connections = {};
-    obj.connections[connection_id] = conv;
-    obj.connections[connection_id].id = connection_id;
-    // obj.connections[connection_id].name = "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)";
-    // obj.connections[connection_id].connectionAttributes.server = "https://prod-apnortheast-a.online.tableau.com";
-    // obj.connections[connection_id].connectionAttributes.siteUrlName = "fjdemosite";
-    obj.connections[connection_id].name = deploy_conf.enviroments[deploy_env].connections.TableauServer.name;
-    obj.connections[connection_id].connectionAttributes.server = deploy_conf.enviroments[deploy_env].connections.TableauServer.connectionAttributes.server;
-    obj.connections[connection_id].connectionAttributes.siteUrlName = deploy_conf.enviroments[deploy_env].connections.TableauServer.connectionAttributes.siteUrlName;
+    obj.connections[connection_tableauServer] = conv.TableauServer;
+    obj.connections[connection_tableauServer].id = connection_tableauServer;
+    obj.connections[connection_tableauServer].name = deploy_conf.enviroments[deploy_env].connections.TableauServer.name;
+    obj.connections[connection_tableauServer].connectionAttributes.server = deploy_conf.enviroments[deploy_env].connections.TableauServer.connectionAttributes.server;
+    obj.connections[connection_tableauServer].connectionAttributes.siteUrlName = deploy_conf.enviroments[deploy_env].connections.TableauServer.connectionAttributes.siteUrlName;
 
     obj.connectionIds = Object.keys(obj.connections);
-    return [connection_id, old_connections, delete_keys];
+    return [connection_tableauServer, old_connections, delete_keys];
     // #--> return [old_connections, delete_keys]
 }
 
@@ -142,11 +143,15 @@ class tabsvc_master{
         this.deploy_archives = [deploy_env];
         this.zip_done = false;
         this.next_task = {};
+        this.wait = true;
 
         this.intervalID = setInterval(() => {
             console.log("[tab zipper] Let's do our best today!");
             console.log(`  zip_queue.length: ${this.zip_queue.length}, deploy_archives: ${this.deploy_archives.length}`)
             // console.log(this.zip_queue);
+            if(this.wait){
+                return 0;
+            }
             if(this.zip_done && this.deploy_archives.length == 0){
                 console.log("Make archive All Done!!");
                 setTimeout(()=>{
@@ -160,8 +165,9 @@ class tabsvc_master{
             if(this.zip_queue.length > 0){
                 this.next_task = this.zip_queue.shift();
                 this.ziptfl();
+                this.wait = false;
             }
-            if(this.zip_done){
+            if(this.zip_done && this.deploy_archives.length > 0){
                 // this.next_task = this.deploy_archives.shift();
                 var ts = new Date();
 
@@ -311,7 +317,9 @@ function all_deploy(){
     // var keys = Object.keys(envs);
     var keys = [deploy_env];
 
-    copyenvs();
+    if(false){
+        copyenvs();
+    }
 
     fl.read([WS], option, function(rs){
         for(var i=0; i<rs.length; i++){

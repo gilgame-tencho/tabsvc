@@ -37,20 +37,70 @@
         }
     },
     "connections":{
-        "connectionType" : ".v1.SqlConnection",
-        "id": "any",
-        "name" : "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)",
-        "isPackaged" : false,
-        "connectionAttributes" : {
-            "server" : "https://prod-apnortheast-a.online.tableau.com",
-            "port" : "443",
-            "query-category" : "Data",
-            "siteUrlName" : "fjdemosite",
-            "channel" : "https",
-            "class" : "sqlproxy",
-            "directory" : "/dataserver",
-            "odbc-native-protocol" : "yes"
+        "TableauServer":{
+            "connectionType" : ".v1.SqlConnection",
+            "id": "any",
+            "name" : "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)",
+            "isPackaged" : false,
+            "connectionAttributes" : {
+                "server" : "https://prod-apnortheast-a.online.tableau.com",
+                "port" : "443",
+                "query-category" : "Data",
+                "siteUrlName" : "fjdemosite",
+                "channel" : "https",
+                "class" : "sqlproxy",
+                "directory" : "/dataserver",
+                "odbc-native-protocol" : "yes"
+            }
+        },
+        "SalesForce":{
+            "connectionType": ".v1.SqlConnection",
+            "id": "any",
+            "name": "servername",
+            "isPackaged": false,
+            "connectionAttributes": {
+              ":managed-keychain": "",
+              "server": "servername",
+              ":workgroup-credentials-dialog": "",
+              "prep-protocol-role": ":prep-protocol-reader",
+              ":flow-name": "TableauPrepFujitsuSalesForce",
+              "maxfieldlength": "4096",
+              "accessToken": "",
+              "compressed-responses": "yes",
+              "salesforce-api-version": "54.0",
+              "compressed-responses-rest": "yes",
+              "server-oauth": "",
+              "service": "",
+              "pagesize": "200",
+              "sf-total-requestor-buffer-size-in-mb": "32",
+              "class": "salesforce",
+              "compressed-responses-soap": "yes",
+              "one-time-sql": "",
+              "compressed-responses-bulk": "yes",
+              "authentication": "auth-oauth",
+              "username": "user@sample.com"
+            }
+        },
+        "postgresql":{
+            "connectionType" : ".v1.SqlConnection",
+            "id" : "any",
+            "name" : "localhost",
+            "isPackaged" : false,
+            "connectionAttributes" : {
+                "sslmode" : "",
+                "server" : "localhost",
+                "dbname" : "vc01",
+                "port" : "5432",
+                ":protocol-customizations" : "",
+                "prep-protocol-role" : ":prep-protocol-reader",
+                ":flow-name" : "TableauPrepFujitsu",
+                "class" : "postgres",
+                "one-time-sql" : "",
+                "authentication" : "username-password",
+                "username" : "postgres"
+            }
         }
     },
+
     "connectionIds" : [ "any" ]
 }
