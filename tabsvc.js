@@ -22,6 +22,10 @@ const csv = fs.readFileSync(path.join(__dirname, 'conf', 'tabsvc_param.csv'));
 
 const tableau_server_tag = "LBT_";
 
+function obj_copy(obj){
+    return Object.assign({}, JSON.parse(JSON.stringify(obj)));
+}
+
 function local_to_siteproject(hyperFilePath){
     var param = {};
 
@@ -33,15 +37,15 @@ function local_to_siteproject(hyperFilePath){
     param.name = name;
     param.project = project;
     // param.dbname = "";
-    console.log(`[debug] ${hyper_path} ->`);
+    console.log(`[debug] local_to_siteproject: ${hyperFilePath} ->`);
     console.log(param);
     return param;
 }
 
 const input_con = target.nodes.any_if1.convert;
-function conv_input(node, connection_param){
-    var conv = input_con;
-    var conp = connection_param;
+function conv_input(node, connection_param, flow){
+    const conv = obj_copy(input_con);
+    const conp = obj_copy(connection_param);
 
     if(conp.old_connections[node.connectionId].connectionAttributes.class != "hyper"){
         console.log(`connection is : class [${conp.old_connections[node.connectionId].connectionAttributes.class}]`);
@@ -51,32 +55,30 @@ function conv_input(node, connection_param){
     // ## IF connection is 'hyper'
     var hyperFileName = conp.old_connections[node.connectionId].connectionAttributes.dbname;
     var site_param = local_to_siteproject(hyperFileName);
-    var hyperName = conp.old_connections[node.connectionId].name;
-    var dbname = deploy_conf.enviroments["dev"].hyper[hyperName];
+    var hyperName = conp.old_connections[node.connectionId].name.replace('.hyper','');
+    console.log(`   hyperName: ${hyperName}`);
+    var dbname = deploy_conf.enviroments["dev"].hyper[hyperName] + "";
+
+    console.log(input_con);
 
     node.nodeType = conv.nodeType;
 
     // ## [Update] connectionAttributes
     node.connectionAttributes = conv.connectionAttributes;
     node.connectionAttributes.dbname = dbname;
+
     node.projectName = site_param.project;
     node.connectionAttributes.datasourceName = site_param.name;
 
     node.relation.table = conv.relation.table;
     node.connectionId = conp.connection_id;
 
-    var debug = {};
-    debug.projectName = node.projectName;
-    debug.connectionId = node.connectionId;
-    debug.table = node.relation.table;
-    debug.nodeType = node.nodeType;
-    console.log(node.connectionAttributes);
-    console.log(debug);
+    return node;
 }
 
 const output_con = target.nodes.any_if2.convert;
 function conv_output(node, connection_param){
-    var conv = output_con;
+    var conv = Object.assign({}, output_con);
     var conp = connection_param;
     var site_param = local_to_siteproject(node.hyperOutputFile);
 
@@ -215,30 +217,42 @@ function rewrite_flow(tfl_file_name, deploy_to){
     var nodes = Object.keys(flow.nodes);
 
     // "connections" propatys rewrite:
-    var [connection_id, old_connections, delete_keys] = conv_connections(flow);
+    const [connection_id, old_connections, delete_keys] = conv_connections(flow);
     // var connection_id = flow.connectionIds[0];
-    var connection_param = {
+    const connection_param = {
         "connection_id" : connection_id,
         "old_connections" : old_connections,
         "delete_keys" : delete_keys,
         "connections" : flow.connections
     }
     console.log(connection_param);
+    console.log(nodes);
 
     // "nodes" propatys rewrite:
     for(var i=0; i<nodes.length; i++){
         var key = nodes[i];
         var node = flow.nodes[key];
         // console.log(`key[ ${key} ] is ${node.baseType}`);
-        // console.log(node.baseType);
+        // console.log(`++ ${key}: ${node.name}`);
         if(node.baseType === 'input'){
             console.log(`[debug] update input: ${node.name}`);
-            conv_input(node, connection_param);
+            node = conv_input(node, connection_param, flow);
+
         }else if(node.baseType === 'output'){
             console.log(`[debug] update output: ${node.name}`);
             conv_output(node, connection_param);
+        }else{
+            // console.log("  none.");
         }
+
     }
+    // console.log("### Last");
+    // console.log("fdad2193-7d87-456c-867f-51b7db0db252");
+    // console.log(flow.nodes["fdad2193-7d87-456c-867f-51b7db0db252"].connectionAttributes);
+    // console.log("66397c5c-4d23-4cc7-b8b8-17e61902db05");
+    // console.log(flow.nodes["66397c5c-4d23-4cc7-b8b8-17e61902db05"].connectionAttributes);
+
+    // console.log(connection_param);
 
     console.log(out_file);
     fs.writeFileSync(out_file,JSON.stringify(flow, null, '  '));
