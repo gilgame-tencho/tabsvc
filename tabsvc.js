@@ -21,6 +21,7 @@ const deploy_conf = JSON.parse(fs.readFileSync(path.join(__dirname, 'conf', "dep
 const csv = fs.readFileSync(path.join(__dirname, 'conf', 'tabsvc_param.csv'));
 
 const tableau_server_tag = "LBT_";
+const deploy_env = "om1";
 
 function obj_copy(obj){
     return Object.assign({}, JSON.parse(JSON.stringify(obj)));
@@ -57,9 +58,9 @@ function conv_input(node, connection_param, flow){
     var site_param = local_to_siteproject(hyperFileName);
     var hyperName = conp.old_connections[node.connectionId].name.replace('.hyper','');
     console.log(`   hyperName: ${hyperName}`);
-    var dbname = deploy_conf.enviroments["dev"].hyper[hyperName] + "";
+    var dbname = deploy_conf.enviroments[deploy_env].hyper[hyperName] + "";
 
-    console.log(input_con);
+    // console.log(input_con);
 
     node.nodeType = conv.nodeType;
 
@@ -84,11 +85,12 @@ function conv_output(node, connection_param){
 
     node.nodeType = conv.nodeType;
     node.projectName = site_param.project;
-    node.projectLuid = "447b9453-3507-4cd3-b936-25258f9ac360";
+    // node.projectLuid = "447b9453-3507-4cd3-b936-25258f9ac360";
+    node.projectLuid = deploy_conf.enviroments[deploy_env].project[node.projectName];
     node.datasourceName = site_param.name;
     node.datasourceDescription = conv.datasourceDescription;
     // node.serverUrl = "https://prod-apnortheast-a.online.tableau.com/#/site/fjdemosite";
-    node.serverUrl = deploy_conf.enviroments["dev"].connections["TableauServer"].serverUrl;
+    node.serverUrl = deploy_conf.enviroments[deploy_env].connections["TableauServer"].serverUrl;
 
     delete node.hyperOutputFile;
     delete node.tdsOutput;
@@ -96,7 +98,6 @@ function conv_output(node, connection_param){
 
 const connection_con = target.connections;
 function conv_connections(obj){
-    console.log("Start conv_connections");
     var conv = connection_con;
     var old_connections = Object.assign({}, obj.connections);
     var keys = Object.keys(obj.connections);
@@ -107,7 +108,7 @@ function conv_connections(obj){
         var con = obj.connections[key];
         console.log(con.connectionAttributes);
         if(con.connectionAttributes.class === "hyper"){
-            console.log("go");
+            // console.log("go");
             if(connection_id == null){
                 connection_id = key;
             }else{
@@ -115,17 +116,20 @@ function conv_connections(obj){
             }
             delete obj.connections[key];
         }else{
-            console.log("no");
+            // console.log("no");
         }
-        console.log(`connection_id:${connection_id}, key:${key}`);
+        // console.log(`connection_id:${connection_id}, key:${key}`);
     }
     // var connection_id = keys.shift();
     // obj.connections = {};
     obj.connections[connection_id] = conv;
     obj.connections[connection_id].id = connection_id;
-    obj.connections[connection_id].name = "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)";
-    obj.connections[connection_id].connectionAttributes.server = "https://prod-apnortheast-a.online.tableau.com";
-    obj.connections[connection_id].connectionAttributes.siteUrlName = "fjdemosite";
+    // obj.connections[connection_id].name = "https://prod-apnortheast-a.online.tableau.com (FJ_DemoSite)";
+    // obj.connections[connection_id].connectionAttributes.server = "https://prod-apnortheast-a.online.tableau.com";
+    // obj.connections[connection_id].connectionAttributes.siteUrlName = "fjdemosite";
+    obj.connections[connection_id].name = deploy_conf.enviroments[deploy_env].connections.TableauServer.name;
+    obj.connections[connection_id].connectionAttributes.server = deploy_conf.enviroments[deploy_env].connections.TableauServer.connectionAttributes.server;
+    obj.connections[connection_id].connectionAttributes.siteUrlName = deploy_conf.enviroments[deploy_env].connections.TableauServer.connectionAttributes.siteUrlName;
 
     obj.connectionIds = Object.keys(obj.connections);
     return [connection_id, old_connections, delete_keys];
@@ -135,18 +139,37 @@ function conv_connections(obj){
 class tabsvc_master{
     constructor(){
         this.zip_queue = [];
+        this.deploy_archives = [deploy_env];
+        this.zip_done = false;
+        this.next_task = {};
 
         this.intervalID = setInterval(() => {
             console.log("[tab zipper] Let's do our best today!");
-            console.log(`  zip_queue.length: ${this.zip_queue.length}`)
+            console.log(`  zip_queue.length: ${this.zip_queue.length}, deploy_archives: ${this.deploy_archives.length}`)
             // console.log(this.zip_queue);
-            if(this.zip_queue == 0) {
-                console.log("All Done!!");
+            if(this.zip_done && this.deploy_archives.length == 0){
+                console.log("Make archive All Done!!");
                 setTimeout(()=>{
                     clearInterval(this.intervalID)
                 })
             }
+            if(this.zip_queue.length == 0) {
+                console.log("Make tfl All Done!!");
+                this.zip_done = true;
+            }
             if(this.zip_queue.length > 0){
+                this.next_task = this.zip_queue.shift();
+                this.ziptfl();
+            }
+            if(this.zip_done){
+                // this.next_task = this.deploy_archives.shift();
+                var ts = new Date();
+
+                this.deploy_archives.shift();
+                this.next_task = {};
+                this.next_task.input_tfl = path.join(__dirname, 'deployment',"dp_" + deploy_env);
+                this.next_task.output_tfl = path.join(__dirname, "deployment", `dp_${deploy_env}_${ts.getTime()}.zip`);
+
                 this.ziptfl();
             }
         }, 1000);
@@ -156,9 +179,8 @@ class tabsvc_master{
         var archive = archiver('zip', {
             zlib: { level: 9 }
         });
-        var next_task = this.zip_queue.shift();
-        var input_tfl = next_task.input_tfl;
-        var output_tfl = next_task.output_tfl;
+        var input_tfl = this.next_task.input_tfl;
+        var output_tfl = this.next_task.output_tfl;
         console.log(`  [zip start] call ziptfl(): ${output_tfl}`);
         // var zip_output = fs.createWriteStream(output_tfl);
         let zip_output = fs.createWriteStream(output_tfl);
@@ -225,15 +247,14 @@ function rewrite_flow(tfl_file_name, deploy_to){
         "delete_keys" : delete_keys,
         "connections" : flow.connections
     }
-    console.log(connection_param);
-    console.log(nodes);
+    // console.log(connection_param);
+    // console.log(nodes);
 
     // "nodes" propatys rewrite:
     for(var i=0; i<nodes.length; i++){
         var key = nodes[i];
         var node = flow.nodes[key];
-        // console.log(`key[ ${key} ] is ${node.baseType}`);
-        // console.log(`++ ${key}: ${node.name}`);
+
         if(node.baseType === 'input'){
             console.log(`[debug] update input: ${node.name}`);
             node = conv_input(node, connection_param, flow);
@@ -246,13 +267,6 @@ function rewrite_flow(tfl_file_name, deploy_to){
         }
 
     }
-    // console.log("### Last");
-    // console.log("fdad2193-7d87-456c-867f-51b7db0db252");
-    // console.log(flow.nodes["fdad2193-7d87-456c-867f-51b7db0db252"].connectionAttributes);
-    // console.log("66397c5c-4d23-4cc7-b8b8-17e61902db05");
-    // console.log(flow.nodes["66397c5c-4d23-4cc7-b8b8-17e61902db05"].connectionAttributes);
-
-    // console.log(connection_param);
 
     console.log(out_file);
     fs.writeFileSync(out_file,JSON.stringify(flow, null, '  '));
@@ -262,6 +276,9 @@ function what_params(){
     console.log(WS);
     console.log(ROOT);
     console.log(option);
+    var ts = new Date();
+    console.log(ts.getTime());
+
 }
 
 function path_parse(_path){
@@ -276,7 +293,7 @@ function path_parse(_path){
     res.svc_path = tmp_order.join('\\');
 
     tmp_order = res.order.concat();
-    tmp_order.splice(res.root_index - 1, 1, path.join('deployment','src_dev'));
+    tmp_order.splice(res.root_index - 1, 1, path.join('deployment',`src_${deploy_env}`));
     res.src_dev = tmp_order.join('\\');
 
     res.name = res.order[res.order.length -1];
@@ -292,7 +309,7 @@ function test_deploy(){
 function all_deploy(){
     var envs = deploy_conf.enviroments;
     // var keys = Object.keys(envs);
-    var keys = ["dev"];
+    var keys = [deploy_env];
 
     copyenvs();
 
@@ -303,7 +320,7 @@ function all_deploy(){
             var item = path_parse(file.path);
             // console.log(item);
 
-            var wdir = path.join('deployment','src_dev');
+            var wdir = path.join('deployment',`src_${deploy_env}`);
             for(var j=0; j<item.ws_order.length; j++){
                 wdir = path.join(wdir, item.ws_order[j]);
                 if (!fs.existsSync(wdir)) {
@@ -323,6 +340,7 @@ function all_deploy(){
                 param.pre = pre;
                 param.dep = dep;
                 param.env = env;
+                param.archive_name = `dp_${key}.zip`;
                 svc_deploy(param);
             }
         }
@@ -371,7 +389,7 @@ function svc_deploy(param){
                 if (!fs.existsSync(wdir)) {
                     fs.mkdirSync(wdir);
                 }
-                exec('unzip -o ' + item.path + ' -d ' + item.svc_path, (err, stdout, stderr) => {
+                exec('unzip -o "' + item.path + '" -d ' + item.svc_path, (err, stdout, stderr) => {
                     if (err) { throw err }
                     console.log(`stdout: ${stdout}`);
                 });
@@ -461,8 +479,8 @@ function svc_deploy(param){
     program.command('dev')
     .description('show dev parameters')
     .action((str, options)=> {
-        // what_params();
-        test_deploy();
+        what_params();
+        // test_deploy();
     });
 
     program.parse();
