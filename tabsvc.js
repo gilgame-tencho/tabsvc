@@ -6,7 +6,7 @@ const { program } = require("commander");
 const archiver = require('archiver');
 const fse = require('fs-extra');
 
-const ws_name = 'ws';
+const ws_name = 'workspace';
 const svc_name = 'svc';
 const option = {"ext": "tfl"};
 const target_name = "target_param.json";
