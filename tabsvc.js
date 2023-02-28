@@ -18,7 +18,7 @@ const DEPLOY = path.join(__dirname, "deployment");
 
 const target = JSON.parse(fs.readFileSync(path.join(__dirname, target_name)));
 const deploy_conf = JSON.parse(fs.readFileSync(path.join(__dirname, 'conf', "deploy.json")));
-const csv = fs.readFileSync(path.join(__dirname, 'conf', 'tabsvc_param.csv'));
+// const csv = fs.readFileSync(path.join(__dirname, 'conf', 'tabsvc_param.csv'));
 
 const tableau_server_tag = "LBT_";
 const deploy_env = "om1";
@@ -142,11 +142,18 @@ class tabsvc_master{
         this.zip_done = false;
         this.next_task = {};
         this.wait = true;
+        this.no_work = false;
 
         this.intervalID = setInterval(() => {
             console.log("[tab zipper] Let's do our best today!");
-            console.log(`  zip_queue.length: ${this.zip_queue.length}, deploy_archives: ${this.deploy_archives.length}`)
+            console.log(`  zip_queue.length: ${this.zip_queue.length}, deploy_archives: ${this.deploy_archives.length}, No work: ${this.no_work}`)
             // console.log(this.zip_queue);
+            if(this.no_work){
+                console.log("Today's holiday.");
+                setTimeout(()=>{
+                    clearInterval(this.intervalID)
+                })
+            }
             if(this.zip_done && this.deploy_archives.length == 0){
                 console.log("Make archive All Done!!");
                 setTimeout(()=>{
@@ -162,6 +169,7 @@ class tabsvc_master{
                 this.ziptfl();
                 this.wait = false;
             }
+            /// ##########################
             if(this.wait){
                 return 0;
             }
@@ -177,6 +185,8 @@ class tabsvc_master{
                 this.ziptfl();
             }
         }, 500);
+        // this.zipper = function(){
+        // this.intervalID = setInterval(this.zipper, 500);
     }
 
     ziptfl(){
@@ -213,7 +223,7 @@ class tabsvc_master{
     }
 }
 
-const ms = new tabsvc_master();
+const TAB_MS = new tabsvc_master();
 
 const pre_deploy_tag = "src_";
 const deploy_tag = "dp_";
@@ -307,7 +317,7 @@ function path_parse(_path){
 }
 
 function test_deploy(){
-    console.log(csv);
+    // console.log(csv);
 }
 
 function all_deploy(){
@@ -356,7 +366,7 @@ function all_deploy(){
 function svc_deploy(param){
     try {
         rewrite_flow(param.target_tlf, param.pre);
-        ms.zip_queue.push(
+        TAB_MS.zip_queue.push(
             {
                 "input_tfl" : path.join(param.pre, param.target_tlf, '/'),
                 "output_tfl" : path.join(param.dep, param.target_tlf)
@@ -368,15 +378,23 @@ function svc_deploy(param){
     }
 }
 
+function zipper_no_work(){
+    TAB_MS.no_work = true;
+}
+
 //###############################
 //####  command main
 //###############################
 {
     function main_init(){
+        zipper_no_work();
         console.log('init function is comming soon!!');
+        copyenvs();
     }
 
     function main_decompose(){
+        zipper_no_work();
+
         fl.read([WS], option, function(rs){
             for(var i=0; i<rs.length; i++){
                 var file = rs[i];
@@ -404,6 +422,7 @@ function svc_deploy(param){
     }
 
     function main_status(){
+        zipper_no_work();
         console.log(SVC);
         exec('cd ' + __dirname);
         exec('bash bin/git_status.sh', (err, stdout, stderr) => {
@@ -413,6 +432,7 @@ function svc_deploy(param){
     }
 
     function main_commit(){
+        zipper_no_work();
         console.log(SVC);
         exec('cd ' + __dirname);
         exec('bash bin/git_commit.sh', (err, stdout, stderr) => {
@@ -427,6 +447,7 @@ function svc_deploy(param){
     }
 
     function main_clean(){
+        zipper_no_work();
         // rm deployment -rf
         console.log('comming soon. clean.');
     }
@@ -449,7 +470,7 @@ function svc_deploy(param){
 
     program.command('decompose')
     .description('ws prep files to svc file decompose.')
-    .alias('d')
+    .alias('dec')
     .action((str, options)=> {
         main_decompose();
     });
@@ -471,7 +492,7 @@ function svc_deploy(param){
     program.command('deploy')
     .description('samthing enviroment prep deployment. at deploy.conf')
     .argument('[env]', 'deploy enviroment.')
-    .alias('d')
+    .alias('dep')
     .action((str, options)=> {
         main_deploy();
     });
