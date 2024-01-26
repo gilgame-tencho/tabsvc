@@ -1,0 +1,55 @@
+{
+  "enviroments":{
+    "dev":{
+      "project":{
+        "project_name_AAA" : "xxxxxx-xxxxxx-xxxxx-xxxxxx",
+        "BBB":"xxxxxx-xxxxxx-xxxxx-xxxxxx",
+        "CCC":"xxxxxx-xxxxxx-xxxxx-xxxxxx"
+      },
+      "hyper":{
+        "Data_XXXX1" : "Data_16740999999999",
+        "Data_XXXX2" : "Data_16740999999999"
+      },
+      "connections":{
+        "TableauServer": {
+          "name" : "https://prod-apnortheast-a.online.tableau.com",
+          "connectionAttributes":{
+            "server" : "https://prod-apnortheast-a.online.tableau.com/#/site/xxxxxx",
+            "siteUrlName" : "xxxxxx"
+          }
+        },
+        "PostgreSQL": {
+          "name" : "localhost",
+          "connectionAttributes":{
+          }
+        }
+      }
+    },
+    "ST":{
+      "project":{
+        "project_name_AAA" : "xxxxxx-xxxxxx-xxxxx-xxxxxx",
+        "BBB":"xxxxxx-xxxxxx-xxxxx-xxxxxx",
+        "CCC":"xxxxxx-xxxxxx-xxxxx-xxxxxx"
+      },
+      "hyper":{
+        "Data_XXXX1" : "Data_16740999999999",
+        "Data_XXXX2" : "Data_16740999999999"
+      },
+      "connections":{
+        "TableauServer": {
+          "name" : "https://prod-apnortheast-a.online.tableau.com",
+          "connectionAttributes":{
+            "server" : "https://prod-apnortheast-a.online.tableau.com/#/site/xxxxxx",
+            "siteUrlName" : "xxxxxx"
+          }
+        },
+        "PostgreSQL": {
+          "name" : "localhost",
+          "connectionAttributes":{
+          }
+        }
+      }
+    }
+
+  }
+}
